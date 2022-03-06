@@ -1,0 +1,731 @@
+package com.example.EtchControl;
+
+// gebruik ctrl-shift-o om de import automatisch aan te vullen
+// Let op: android.R betekent een fout in 1 van de xml files
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+public class MainActivity extends Activity  {
+
+	// ************************************************************************************************
+	// *************************  Variabelen en objecten Declaratie************************************
+	// ************************************************************************************************
+	private static String BTAddress = "20:14:05:20:12:11"; 	  // MAC-address of Bluetooth module (you must edit this line)
+	//	private static String BTAddress = "00:10:05:25:00:01"; 	  // MAC-address of Bluetooth module (you must edit this line)
+
+	// Objecten voor grafische elementen
+	TextView tvBTStatus; 			// Textview for Bluetooth status
+
+	TextView tvDevelopTemp; 		// TextView for Development bath Temperatue
+	TextView tvEtchTemp; 			// TextView for Etch bath Temperature
+	TextView tvDevelopTimerStatus; 	// TextView for Development Timer Status
+	TextView tvEtchTimerStatus; 	// TextView for Etch Timer Status
+	TextView tvExpTimerStatus; 		// TextView for Exposure Timer Status
+	TextView tvDevelopHeaterStatus; // TextView for Development Temperature Status
+	TextView tvEtchHeaterStatus;	// TextView for Etch Temperature Status
+	TextView tvDebug; 				// TextView for Debug text
+
+	Button btBTConnect; 			// Button for connecting to Bluetooth
+	Button btDevelopTempOn; 		// Button for Developer temperature control On
+	Button btDevelopTempOff; 		// Button for Developer temperature control Off
+	Button btEtchTempOn; 			// Button for Etch temperature control On
+	Button btEtchTempOff; 			// Button for Etch temperature control Off
+	Button btDevelopTimerStart; 	// Button for start Developer Timer
+	Button btDevelopTimerStop; 		// Button for stop Developer Timer
+	Button btDevelopTimerReset; 	// Button for Reset Developer Timer
+	Button btEtchTimerStart; 		// Button for start Etch Timer
+	Button btEtchTimerStop; 		// Button for stop Etch Timer
+	Button btEtchTimerReset; 		// Button for Reset Etch Timer
+	Button btExpTimerStart; 		// Button for start Exposure Timer
+	Button btExpTimerStop; 			// Button for stop Exposure Timer
+	Button btExpTimerReset; 		// Button for Reset Exposure Timer
+
+	// Variables for the functionality
+	boolean bBTStatusOkIdc = false;			// Indicate BTStatus in green if connected?
+	boolean bDevelopHeaterOn = false;		// Status Heater of the Developer bath is on
+	boolean bEtchHeaterOn = false;			// Status Heater of the Etching bath is on
+	boolean bExpUnitOn = false;				// Status Exposure Unit is on
+	boolean bDevelopHeaterCtrlOn = false;	// Status Heater of control of the Developer bath is on
+	boolean bEtchHeaterCtrlOn = false;		// Status Heater of control of the Etching bath is on
+	boolean bDevelopTimerOn = false;		// Status Timer of Developer
+	boolean bEtchTimerOn = false;			// Status Timer of Etch
+	boolean bExpTimerOn = false;			// Status Timer of Exposure
+	int iDevelopCountdown = 0;				// Countdown timer for Developer
+	int iEtchCountdown = 0;					// Countdown timer for Etch
+	int iExpCountdown = 0;					// Countdown timer for Exposure
+	int iDevelopCountdownMax = 0;			// Initial countdown value for timer for Developer
+	int iEtchCountdownMax = 0;				// Initial countdown value for timer for Etch
+	int iExpCountdownMax = 0;				// Initial countdown value for timer for Exposure
+	boolean bDevelopTempIdc = true;			// Color for Developer temperature if within range? 	
+	boolean bEtchTempIdc = true;			// Color for Etch temperature if within range? 	
+	boolean bDevelopTempRng = false;		// Flag for Developer temperature if within range 	
+	boolean bEtchTempRng = false;			// Flag for Etch temperature if within range 	
+	double dDevelopTemp = -400d;			// Temperature of Develop bath
+	double dEtchTemp = -400d;				// Temperature of Etch bath
+	double dDevelopTempMax = 22d;			// Max temperature for switching of Developer heater
+	double dDevelopTempMin = 20d;			// Max temperature for switching of Developer heater
+	double dEtchTempMax = 47d;				// Max temperature for switching of Etch heater
+	double dEtchTempMin = 43d;				// Max temperature for switching of Etch heater
+	double dDevelopTempMaxIdc = 23d;		// Max temperature for indication of Developer heater
+	double dDevelopTempMinIdc = 19d;		// Max temperature for indication of Developer heater
+	double dEtchTempMaxIdc = 48d;			// Max temperature for indication of Etch heater
+	double dEtchTempMinIdc = 42d;			// Max temperature for indication of Etch heater
+	boolean bDevelopTempRead =  false;		// flag whether Developer temperature is read
+	boolean bEtchTempRead =  false;			// flag whether Etch temperature is read
+	int iTempReadWDT = 0;					// watch dog timer whether 
+	final int iTempReadWDTMax = 20;			// Max countdown value for watch dog in 100ms (20 = 2 seconds)
+	int iBuzzCountdown = 0;					// Countdown for buzzer on
+	int iBuzzCountdownMax = 100;			// Maximum for buzzer Countdown in 100 ms (100 = 10 second)
+	boolean bBuzzOn = false;				// Flag whether buzzer is on
+	boolean bDebugWrite = true;				// Flag whether respons of AndroidIO board is shown
+
+	// Database voor user settings
+	SharedPreferences prefs;	// het object prefs is de database van de settings
+	OnSharedPreferenceChangeListener spListener;  // listener die wordt aangeroepen als de settings veranderen
+
+	// Handler om messages tussen objecten te versturen
+	Handler hndMessage;		// De handler die gebruikt wordt om de messages te versturen
+	final int RECIEVE_MESSAGE_BTSTATUS = 1;		// Constant for Handler: Bluetooth status
+	final int RECIEVE_MESSAGE_BTDATA = 2;		// Constant for Handler: Received Bluetooth data
+	final int RECIEVE_MESSAGE_UPDATE = 3;		// Constant for Handler: Update UI
+	final int RECIEVE_MESSAGE_BTCOMMAND = 4;		// Constant for Handler: Send command to AndroidIO Board
+
+	final int RMB_DEV_ON = 1;					// for Recieve_Message_BTCommand: Switch Develop Heater on
+	final int RMB_DEV_OFF = 2;					// for Recieve_Message_BTCommand: Switch Develop Heater off
+	final int RMB_ETCH_ON = 3;					// for Recieve_Message_BTCommand: Switch Etch Heater on
+	final int RMB_ETCH_OFF = 4;					// for Recieve_Message_BTCommand: Switch Etch Heater off
+	final int RMB_EXP_ON = 3;					// for Recieve_Message_BTCommand: Switch Exposure unit on
+	final int RMB_EXP_OFF = 4;					// for Recieve_Message_BTCommand: Switch Exposure off
+	final int RMB_DEV_BUZ_ON = 5;				// for Recieve_Message_BTCommand: Turn buzzer on (developer)
+	final int RMB_DEV_BUZ_OFF = 6;				// for Recieve_Message_BTCommand: Turn buzzer off (developer)
+	final int RMB_ETCH_BUZ_ON = 7;				// for Recieve_Message_BTCommand: Turn buzzer on (etch)
+	final int RMB_ETCH_BUZ_OFF = 8;				// for Recieve_Message_BTCommand: Turn buzzer off (etch)
+	final int RMB_EXP_BUZ_ON = 9;				// for Recieve_Message_BTCommand: Turn buzzer on (exposure)
+	final int RMB_EXP_BUZ_OFF = 10;				// for Recieve_Message_BTCommand: Turn buzzer off (exposure)
+	final int RMB_BUZ_OFF = 11;					// for Recieve_Message_BTCommand: Turn buzzer off (all cases)
+	final int RMB_READ_TEMP = 12;				// for Recieve_Message_BTCommand: Read temperatures
+
+	// variabelen voor de grafiek
+	final int grafArrayMax=31;							// Aantal bars
+	double[] graphArray = new double[grafArrayMax+1];	// Array met de waarden van de bars
+	int graphArrayPositie=0;							// Positie in de array
+	boolean runGraph = false;							// Boolean die aangeeft of de grafiek moet gevuld worden
+
+	// Object voor interactie met Bluetooth
+	BTfunctions MyBluetooth;
+
+
+	// Variabelen voor datalogger
+	byte[] i2cBuffer = new byte[65536];
+	int c3_address, c3_base, c3_count;
+	boolean c3_read, c4_read;
+	int c4_block, c4_status, c4_pos, c4_bit, c4_mcount, c4_mscount;
+	boolean graph_refresh=false;
+	double[] i2cData = new double[65536];
+	int graph_max=0;
+	int run_cnt;
+
+	PrintWriter DebugFile = null;
+	FileWriter fw;
+	File ff;
+
+	// ************************************************************************************************
+	// *************************************  Methoden  ***********************************************
+	// ************************************************************************************************
+
+	@SuppressLint("HandlerLeak") 	// Voorkomt warning bij de message handler
+
+	@Override
+	public void onCreate(Bundle savedInstanceState){  // Eerste stap in de Android life cycle 
+		super.onCreate(savedInstanceState);
+
+		prefs = PreferenceManager.getDefaultSharedPreferences(this);	// de usersettings database voor deze app
+
+		setContentView(R.layout.activity_main);		// Creeer de layout op basis van de xml file src/layout/activity_main.xml
+
+		RelativeLayout rView = (RelativeLayout)findViewById(R.id.view);
+
+		btBTConnect = (Button) findViewById(R.id.idBTConnect);
+		tvBTStatus=(TextView)findViewById(R.id.idBTStatus);
+		tvDebug=(TextView)findViewById(R.id.idDebugtext);
+
+		tvDevelopTimerStatus=(TextView)rView.findViewById(R.id.idDevelopTimerStat);
+		tvEtchTimerStatus=(TextView)findViewById(R.id.idEtchTimerStat);
+		tvExpTimerStatus=(TextView)findViewById(R.id.idExpTimerStat);
+		tvDevelopHeaterStatus=(TextView)rView.findViewById(R.id.idDevelopTempStat);
+		tvEtchHeaterStatus=(TextView)findViewById(R.id.idEtchTempStat);
+		tvDevelopTemp=(TextView)rView.findViewById(R.id.idDevelopTempTemp);
+		tvEtchTemp=(TextView)findViewById(R.id.idEtchTempTemp);
+
+		btDevelopTempOn = (Button) findViewById(R.id.idDevelopTempOn);
+		btDevelopTempOff = (Button) findViewById(R.id.idDevelopTempOff);
+		btEtchTempOn = (Button) findViewById(R.id.idEtchTempOn);
+		btEtchTempOff = (Button) findViewById(R.id.idEtchTempOff);
+		btDevelopTimerStart = (Button) findViewById(R.id.idDevelopTimerStart);
+		btDevelopTimerStop = (Button) findViewById(R.id.idDevelopTimerStop);
+		btDevelopTimerReset = (Button) findViewById(R.id.idDevelopTimerReset);
+		btEtchTimerStart = (Button) findViewById(R.id.idEtchTimerStart);
+		btEtchTimerStop = (Button) findViewById(R.id.idEtchTimerStop);
+		btEtchTimerReset = (Button) findViewById(R.id.idEtchTimerReset);
+		btExpTimerStart = (Button) findViewById(R.id.idExpTimerStart);
+		btExpTimerStop = (Button) findViewById(R.id.idExpTimerStop);
+		btExpTimerReset = (Button) findViewById(R.id.idExpTimerReset);
+
+		Log.e(TAG, Environment.getExternalStorageDirectory().getPath()+"/datalogger");
+		new File(Environment.getExternalStorageDirectory().getPath()+"/datalogger").mkdirs();
+		ff = new File(Environment.getExternalStorageDirectory().getPath()+"/datalogger/debug.txt");
+		try {
+			fw = new FileWriter(ff);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		DebugFile = new PrintWriter(fw, true);
+		//		try {
+		//			DebugFile = new PrintWriter(Environment.getExternalStorageDirectory().getPath()+"/datalogger/debug.txt", "UTF-8");
+		//		} catch (FileNotFoundException e1) {
+		//			// TODO Auto-generated catch block
+		//			e1.printStackTrace();
+		//		} catch (UnsupportedEncodingException e1) {
+		//			// TODO Auto-generated catch block
+		//			e1.printStackTrace();
+		//		}
+
+		hndMessage = new Handler() {							// Initialiseer de handler om de messages tussen objecten te versturen
+			public void handleMessage(android.os.Message msgMessage) { // Android roept dit aan als er een message is. msgMessage is object dat is ontvangen
+				String sTekstMessage;
+				int iTemp1;
+				DebugFile.println("Test");
+				switch (msgMessage.what) {
+				case RECIEVE_MESSAGE_BTSTATUS:					// message is een Bluetooth status update
+					sTekstMessage=(String) msgMessage.obj;		// Zet de tekst om naar de string sTekstMessage
+					tvBTStatus.setText(sTekstMessage);			// Zet de tekst in de tvBTStatus TextView
+					if (msgMessage.arg1==1) {
+						if (bBTStatusOkIdc) {
+							tvBTStatus.setBackgroundColor(Color.parseColor("#FF00C000"));
+						} else {
+							tvBTStatus.setBackgroundColor(Color.parseColor("#00000000"));
+						}
+					} else {
+						tvBTStatus.setBackgroundColor(Color.parseColor("#FFB00000"));
+					}
+					break;
+				case RECIEVE_MESSAGE_BTDATA:					// message is data van de Bluetooth module
+					sTekstMessage=(String) msgMessage.obj; 		// Zet de tekst om naar de string sTekstMessage
+					sTekstMessage=sTekstMessage.replace("\r","").replace("\n",""); // verwijder de einde lijn tekens
+					Log.e(TAG, "BT says: "+sTekstMessage);
+					//	if (prefs.getBoolean("debug",false)==true) {	// als in usersettings debugmode aanstaat
+					if (bDebugWrite) {
+						if(sTekstMessage.length()>22) {
+							tvDebug.setText("D: "+sTekstMessage.substring(0, 22));// zet dan response van de module naar de status TextView
+						} else {
+							tvDebug.setText("D: "+sTekstMessage);// zet dan response van de module naar de status TextView
+						}
+					}
+					//	}
+					if (sTekstMessage.length()>3) {				// Een goede response van de module bevat minstens 3 tekens 
+						//Log.e(TAG, "Read: " + sTekstMessage);
+						if ((sTekstMessage.substring(0, 4).equals("R B3")) && (sTekstMessage.length()>5)) { // datalog status
+							//if (DebugFile!=null) DebugFile.println(sTekstMessage);
+							iTemp1=Integer.parseInt(sTekstMessage.substring(5, sTekstMessage.length()), 10);
+							dDevelopTemp=convNTC2Temp(iTemp1);
+							bDevelopTempRead=true;
+							iTempReadWDT=iTempReadWDTMax;		// reset watch dog timer
+						} // B0 
+						if ((sTekstMessage.substring(0, 4).equals("R B4")) && (sTekstMessage.length()>5)) { // datalog status
+							//if (DebugFile!=null) DebugFile.println(sTekstMessage);
+							iTemp1=Integer.parseInt(sTekstMessage.substring(5, sTekstMessage.length()), 10);
+							dEtchTemp=convNTC2Temp(iTemp1);
+							bEtchTempRead=true;
+							iTempReadWDT=iTempReadWDTMax;		// reset watch dog timer
+						} // B1 
+
+					}
+					break;
+				case RECIEVE_MESSAGE_UPDATE:					// message is een Bluetooth status update
+					updateUI();
+					break;
+				case RECIEVE_MESSAGE_BTCOMMAND:					// message is een Bluetooth status update
+					if (msgMessage.arg1==RMB_DEV_ON) {switchDevelopHeater(true);}
+					if (msgMessage.arg1==RMB_DEV_OFF) {switchDevelopHeater(false);}
+					if (msgMessage.arg1==RMB_ETCH_ON) {switchEtchHeater(true);}
+					if (msgMessage.arg1==RMB_ETCH_OFF) {switchEtchHeater(false);}
+					if (msgMessage.arg1==RMB_EXP_ON) {switchExpUnit(true);}
+					if (msgMessage.arg1==RMB_EXP_OFF) {switchExpUnit(false);}
+					if (msgMessage.arg1==RMB_DEV_BUZ_ON) {iBuzzCountdown=iBuzzCountdownMax; switchBuzz(true);}
+					if (msgMessage.arg1==RMB_ETCH_BUZ_ON) {iBuzzCountdown=iBuzzCountdownMax; switchBuzz(true);}
+					if (msgMessage.arg1==RMB_EXP_BUZ_ON) {iBuzzCountdown=iBuzzCountdownMax; switchBuzz(true);}
+					if (msgMessage.arg1==RMB_BUZ_OFF) {switchBuzz(false);}
+					if (msgMessage.arg1==RMB_READ_TEMP) {
+						bDevelopTempRead=false;
+						bEtchTempRead=false;
+						//MyBluetooth.send_command("s b3 3#s b32 10#r b3#s b4 3#s b42 10#r b4"+(char)10);
+						MyBluetooth.send_command("s b3 3#s b32 10#r b3"+(char)10);
+						tvDebug.setText("Read Temp");
+						Log.e(TAG, "Read Temperature");
+					}
+					//if (msgMessage.arg2==2) {tvLogStatus.setText("---");}
+					//voegToeAanGrafiek(21);
+					break;
+				} // switch
+			}; // handleMessage
+		}; // hndMessage
+
+		MyBluetooth = new BTfunctions(); // Alle Bluetooth functies zijn nu beschikbaar in het object MyBluetooth
+		MyBluetooth.Initiate(hndMessage, BTAddress);	// Initieer de Bluetooth connectie
+
+		btBTConnect.setOnClickListener(new OnClickListener() { // Android roept dit aan als de button idConnect wordt ingedrukt
+			public void onClick(View v) {
+				MyBluetooth.connect();
+			}
+		}); // btBTConnect.setOnClickListener
+
+		btDevelopTempOn.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				bDevelopHeaterCtrlOn=true;
+			}
+		}); // btDevelopTempOn.setOnClickListener
+
+		btDevelopTempOff.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				bDevelopHeaterCtrlOn=false;
+				switchDevelopHeater(false);
+			}
+		}); // btDevelopTempOff.setOnClickListener
+
+		btEtchTempOn.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				bEtchHeaterCtrlOn=true;
+			}
+		}); // btEtchTempOn.setOnClickListener
+
+		btEtchTempOff.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				bEtchHeaterCtrlOn=false;
+				switchEtchHeater(false);
+			}
+		}); // btEtchTempOff.setOnClickListener
+
+		btDevelopTimerStart.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				if (iDevelopCountdown==0) setDevelopTimerMax(); // otherwise continue
+				bDevelopTimerOn=true;
+			}
+		}); // btDevelopTimerStart.setOnClickListener
+
+		btDevelopTimerStop.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				bDevelopTimerOn=false;
+			}
+		}); // btDevelopTimerStop.setOnClickListener
+
+		btDevelopTimerReset.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				bDevelopTimerOn=false;
+				setDevelopTimerMax();
+			}
+		}); // btDevelopTimerReset.setOnClickListener
+
+		btEtchTimerStart.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				if (iEtchCountdown==0) setEtchTimerMax(); // otherwise continue
+				bEtchTimerOn=true;
+			}
+		}); // btEtchTimerStart.setOnClickListener
+
+		btEtchTimerStop.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				bEtchTimerOn=false;
+			}
+		}); // btEtchTimerStop.setOnClickListener
+
+		btEtchTimerReset.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				bEtchTimerOn=false;
+				setEtchTimerMax();
+			}
+		}); // btEtchTimerReset.setOnClickListener
+
+		btExpTimerStart.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				if (iExpCountdown==0) setExpTimerMax(); // otherwise continue
+				switchExpUnit(true);
+				bExpTimerOn=true;
+			}
+		}); // btExpTimerStart.setOnClickListener
+
+		btExpTimerStop.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				bExpTimerOn=false;
+				switchExpUnit(false);
+			}
+		}); // btExpTimerStop.setOnClickListener
+
+		btExpTimerReset.setOnClickListener(new OnClickListener() { // Is called when button is clicked
+			public void onClick(View v) {
+				bExpTimerOn=false;
+				switchExpUnit(false);
+				setExpTimerMax();
+			}
+		}); // btExpTimerReset.setOnClickListener
+
+		get_options_settings();	// Read all settings from the database
+		spListener = new SharedPreferences.OnSharedPreferenceChangeListener() {  // definieer de interface vanspListener
+			public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {  // Android roept dit aan als de usersettings wijzigen
+				get_options_settings();
+			} // onSharedPreferenceChanged
+		}; // spListener
+
+		prefs.registerOnSharedPreferenceChangeListener(spListener); // android roept bovenstaande spListener aan als usersettings wijzigen
+
+		new Thread(new Runnable() {  // Maak een thread
+			public void run(){		 // en definieer de interface
+				int loopcnt=0;
+				boolean bUpdateNeeded = false;
+				while (true) {
+					loopcnt++;
+					
+					// Watchdog timer
+					if (iTempReadWDT>0) {iTempReadWDT--;}		// decrease dog timer
+
+					// Check temperatures, check within range and switch Heaters
+					if (bDevelopTempRead) {						// Develop thermostat
+						bDevelopTempRead=false;
+						if((dDevelopTemp<dDevelopTempMinIdc) || (dDevelopTemp>dDevelopTempMaxIdc)) {bDevelopTempRng=false;} else {bDevelopTempRng=true;}
+						if(bDevelopHeaterCtrlOn){
+							if ((dDevelopTemp>dDevelopTempMax) && (bDevelopHeaterOn)) {	// High temperature reached while heater on?
+								hndMessage.obtainMessage(RECIEVE_MESSAGE_BTCOMMAND, RMB_DEV_OFF, 0, " ").sendToTarget();
+								bUpdateNeeded=true;
+							}
+							if ((dDevelopTemp<dDevelopTempMin) && (!bDevelopHeaterOn)) {	// Low temperature reached while heater off?
+								hndMessage.obtainMessage(RECIEVE_MESSAGE_BTCOMMAND, RMB_DEV_ON, 0, " ").sendToTarget();
+								bUpdateNeeded=true;
+							}
+						}
+					}
+					if (bEtchTempRead) {						// Etch thermostat
+						bEtchTempRead=false;
+						if((dEtchTemp<dEtchTempMinIdc) || (dEtchTemp>dEtchTempMaxIdc)) {bEtchTempRng=false;} else {bEtchTempRng=true;}
+						if(bEtchHeaterCtrlOn){
+							if ((dEtchTemp>dEtchTempMax) && (bEtchHeaterOn)) {	// High temperature reached while heater on?
+								hndMessage.obtainMessage(RECIEVE_MESSAGE_BTCOMMAND, RMB_ETCH_OFF, 0, " ").sendToTarget();
+								bUpdateNeeded=true;
+							}
+							if ((dEtchTemp<dEtchTempMin) && (!bEtchHeaterOn)) {	// Low temperature reached while heater off?
+								hndMessage.obtainMessage(RECIEVE_MESSAGE_BTCOMMAND, RMB_ETCH_ON, 0, " ").sendToTarget();
+								bUpdateNeeded=true;
+							}
+						}
+					}
+					
+					// Timers
+					if (bDevelopTimerOn) {									// Develop Timer
+						iDevelopCountdown--;
+						bUpdateNeeded=true;
+						if (iDevelopCountdown<0) {
+							bDevelopTimerOn=false;
+							iDevelopCountdown=0;
+							hndMessage.obtainMessage(RECIEVE_MESSAGE_BTCOMMAND, RMB_DEV_BUZ_ON, 0, " ").sendToTarget();
+						}
+					}
+					if (bEtchTimerOn) {									// Etch Timer
+						iEtchCountdown--;
+						bUpdateNeeded=true;
+						if (iEtchCountdown<0) {
+							bEtchTimerOn=false;
+							iEtchCountdown=0;
+							hndMessage.obtainMessage(RECIEVE_MESSAGE_BTCOMMAND, RMB_ETCH_BUZ_ON, 0, " ").sendToTarget();
+						}
+					}
+					if (bExpTimerOn) {									// Exp Timer
+						iExpCountdown--;
+						bUpdateNeeded=true;
+						if (iExpCountdown<0) {
+							bExpTimerOn=false;
+							iExpCountdown=0;
+							hndMessage.obtainMessage(RECIEVE_MESSAGE_BTCOMMAND, RMB_EXP_OFF, 0, " ").sendToTarget();
+							hndMessage.obtainMessage(RECIEVE_MESSAGE_BTCOMMAND, RMB_EXP_BUZ_ON, 0, " ").sendToTarget();
+						}
+					}
+
+					// Buzzer
+					if (bBuzzOn) {
+						iBuzzCountdown--;
+						bUpdateNeeded=true;
+						if (iBuzzCountdown<=0) {
+							bBuzzOn=false;
+							hndMessage.obtainMessage(RECIEVE_MESSAGE_BTCOMMAND, RMB_BUZ_OFF, 0, " ").sendToTarget();
+						}
+					}
+					
+					// Read temperatures once every second
+					if ((loopcnt % 10) == 0) {
+						hndMessage.obtainMessage(RECIEVE_MESSAGE_BTCOMMAND, RMB_READ_TEMP, 0, " ").sendToTarget();
+					}
+					// Loop completed, send update if needed and wait a little
+					if ((bUpdateNeeded) || ((loopcnt % 10) == 5)) hndMessage.obtainMessage(RECIEVE_MESSAGE_UPDATE, -1, 1, " ").sendToTarget();
+					try {Thread.sleep(100);} catch (InterruptedException e) {}// Sleep 100 ms
+				} // while
+			}
+		}).start(); // Thread
+
+
+	}  // onCreate
+
+	@Override
+	public void onResume() {	// Tweede fase in de life cycle
+		super.onResume();
+		MyBluetooth.connect();
+	} // onResume
+
+	@Override
+	public void onPause() {		// Eerste stap in beeindigen van de life cycle
+		super.onPause();
+		MyBluetooth.disConnect();
+		//if (DebugFile!=null) 
+		DebugFile.close();		
+	} // onPause
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {		// Genereer de code voor het menu
+		getMenuInflater().inflate(R.menu.main, menu);	// gebaseerd op de xml file src/menu/menu.xml
+		return true;
+	} // onCreateOptionsMenu
+
+	private static final String TAG = "Datalogger";
+
+	public boolean onOptionsItemSelected(MenuItem item) {	// Android roept dit aan als op een menuoptie wordt geklikt
+		switch (item.getItemId()) {
+		case R.id.action_settings:	// start de user setting fragment
+			Intent i = new Intent(MainActivity.this, UserSettingActivity.class); // Vergeet niet in AndroidManifest toe te staan!
+			startActivity(i);
+			return true;
+		case R.id.exit:
+			finish();		// exit the app; normally not needed. But sometimesneeded when Bluetooth is stuck.
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		} 
+	} // onOptionsItemSelected
+
+	private void updateUI() {
+		// Temperature values 
+		if ((dDevelopTemp<-380d) || (iTempReadWDT==0)) {
+			tvDevelopTemp.setText("---");
+			if (bDevelopTempIdc) {
+				tvDevelopTemp.setBackgroundColor(Color.parseColor("#FFB00000"));
+			} else {
+				tvDevelopTemp.setBackgroundColor(Color.parseColor("#00000000"));
+			}
+		} else {
+			tvDevelopTemp.setText(String.format("%-3.1f C", dDevelopTemp));
+			if (bDevelopTempIdc) {
+				if (bDevelopTempRng) {
+					tvDevelopTemp.setBackgroundColor(Color.parseColor("#FF00B000"));
+				} else {
+					tvDevelopTemp.setBackgroundColor(Color.parseColor("#FFB00000"));
+				}
+			} else {
+				tvDevelopTemp.setBackgroundColor(Color.parseColor("#00000000"));
+			}
+		}
+		if ((dEtchTemp<-380d) || (iTempReadWDT==0)) {
+			tvEtchTemp.setText("---");
+			if (bEtchTempIdc) {
+				tvEtchTemp.setBackgroundColor(Color.parseColor("#FFB00000"));
+			} else {
+				tvEtchTemp.setBackgroundColor(Color.parseColor("#00000000"));
+			}
+		} else {
+			tvEtchTemp.setText(String.format("%-3.1f C", dEtchTemp));
+			if (bEtchTempIdc) {
+				if (bEtchTempRng) {
+					tvEtchTemp.setBackgroundColor(Color.parseColor("#FF00B000"));
+				} else {
+					tvEtchTemp.setBackgroundColor(Color.parseColor("#FFB00000"));
+				}
+			} else {
+				tvEtchTemp.setBackgroundColor(Color.parseColor("#00000000"));
+			}
+		}
+
+		// Heater control
+		if (bDevelopHeaterOn) {
+			tvDevelopHeaterStatus.setText("Heater ON");
+			tvDevelopHeaterStatus.setBackgroundColor(Color.parseColor("#FF00B000"));
+			tvDevelopHeaterStatus.setTextColor(Color.parseColor("#FF000000"));
+		} else {
+			tvDevelopHeaterStatus.setText("Heater OFF");
+			tvDevelopHeaterStatus.setBackgroundColor(Color.parseColor("#00000000"));
+			tvDevelopHeaterStatus.setTextColor(Color.parseColor("#FFC0C0C0"));
+		}
+		if (bDevelopHeaterCtrlOn) {
+			tvDevelopHeaterStatus.setPaintFlags(tvDevelopHeaterStatus.getPaintFlags() & (~ Paint.STRIKE_THRU_TEXT_FLAG));
+			btDevelopTempOn.getBackground().setColorFilter(0xA000C000, PorterDuff.Mode.OVERLAY);
+			btDevelopTempOff.getBackground().clearColorFilter();
+		} else {
+			tvDevelopHeaterStatus.setPaintFlags(tvDevelopHeaterStatus.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+			btDevelopTempOn.getBackground().clearColorFilter();
+			btDevelopTempOff.getBackground().setColorFilter(0xA0006000, PorterDuff.Mode.OVERLAY);
+		}
+		if (bEtchHeaterOn) {
+			tvEtchHeaterStatus.setText("Heater ON");
+			tvEtchHeaterStatus.setBackgroundColor(Color.parseColor("#FF00B000"));
+			tvEtchHeaterStatus.setTextColor(Color.parseColor("#FF000000"));
+		} else {
+			tvEtchHeaterStatus.setText("Heater OFF");
+			tvEtchHeaterStatus.setBackgroundColor(Color.parseColor("#00000000"));
+			tvEtchHeaterStatus.setTextColor(Color.parseColor("#FFC0C0C0"));
+		}
+		if (bEtchHeaterCtrlOn) {
+			tvEtchHeaterStatus.setPaintFlags(tvDevelopHeaterStatus.getPaintFlags() & (~ Paint.STRIKE_THRU_TEXT_FLAG));
+			btEtchTempOn.getBackground().setColorFilter(0xA000C000, PorterDuff.Mode.OVERLAY);
+			btEtchTempOff.getBackground().clearColorFilter();
+		} else {
+			tvEtchHeaterStatus.setPaintFlags(tvDevelopHeaterStatus.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+			btEtchTempOn.getBackground().clearColorFilter();
+			btEtchTempOff.getBackground().setColorFilter(0xA0006000, PorterDuff.Mode.OVERLAY);
+		}
+
+		// Timer
+		tvDevelopTimerStatus.setText(Integer.toString(iDevelopCountdown/10)+" s");
+		if (bDevelopTimerOn) {
+			btDevelopTimerStart.getBackground().setColorFilter(0xA000C000, PorterDuff.Mode.OVERLAY);
+			btDevelopTimerStop.getBackground().clearColorFilter();
+		} else {
+			btDevelopTimerStart.getBackground().clearColorFilter();
+			btDevelopTimerStop.getBackground().setColorFilter(0xA0006000, PorterDuff.Mode.OVERLAY);
+		}
+		tvEtchTimerStatus.setText(Integer.toString(iEtchCountdown/10)+" s");
+		if (bEtchTimerOn) {
+			btEtchTimerStart.getBackground().setColorFilter(0xA000C000, PorterDuff.Mode.OVERLAY);
+			btEtchTimerStop.getBackground().clearColorFilter();
+		} else {
+			btEtchTimerStart.getBackground().clearColorFilter();
+			btEtchTimerStop.getBackground().setColorFilter(0xA0006000, PorterDuff.Mode.OVERLAY);
+		}
+		tvExpTimerStatus.setText(Integer.toString(iExpCountdown/10)+" s");
+		if (bExpTimerOn) {
+			btExpTimerStart.getBackground().setColorFilter(0xA000C000, PorterDuff.Mode.OVERLAY);
+			btExpTimerStop.getBackground().clearColorFilter();
+		} else {
+			btExpTimerStart.getBackground().clearColorFilter();
+			btExpTimerStop.getBackground().setColorFilter(0xA0006000, PorterDuff.Mode.OVERLAY);
+		}
+	}
+
+	void switchDevelopHeater(boolean value) {
+		if (value) {
+			MyBluetooth.send_command("s b0 2 1"+(char)10);
+			bDevelopHeaterOn=true;
+		} else {
+			MyBluetooth.send_command("w b0 0"+(char)10);
+			bDevelopHeaterOn=false;
+		}
+	}
+
+	void switchEtchHeater(boolean value) {
+		if (value) {
+			MyBluetooth.send_command("s b1 2 1"+(char)10);
+			bEtchHeaterOn=true;
+		} else {
+			MyBluetooth.send_command("w b1 0"+(char)10);
+			bEtchHeaterOn=false;
+		}
+	}
+
+	void switchExpUnit(boolean value) {
+		if (value) {
+			MyBluetooth.send_command("s b1 2 1"+(char)10);
+			bExpUnitOn=true;
+		} else {
+			MyBluetooth.send_command("w b1 0"+(char)10);
+			bExpUnitOn=false;
+		}
+	}
+
+	void switchBuzz(boolean value) {
+		if (value) {
+			MyBluetooth.send_command("s b1 2 1"+(char)10);
+			bBuzzOn=true;
+		} else {
+			MyBluetooth.send_command("w b1 0"+(char)10);
+			bBuzzOn=false;
+		}
+	}
+
+	void setDevelopTimerMax() {
+		iDevelopCountdown=iDevelopCountdownMax;
+	}
+
+	void setEtchTimerMax() {
+		iEtchCountdown=iEtchCountdownMax;
+	}
+
+	void setExpTimerMax() {
+		iExpCountdown=iExpCountdownMax;
+	}
+
+	double convNTC2Temp(int ADCvalue) {
+		double Beta=3880d;
+		double Roo=1e4d*Math.exp(-Beta/293d);
+		double Vntc=(double)ADCvalue/10d;
+		if (Vntc<0.5d) Vntc=1d;
+		double Rntc=1e4/(1024d / Vntc-1);
+		double temperature=Beta/Math.log(Rntc/Roo)-273;
+		Log.e(TAG, "Conv temperature: "+ADCvalue+" "+temperature);
+		return temperature;
+	}
+
+	void get_options_settings() {
+		if (prefs.getBoolean("awake",false)==true) {	// Stay awake?
+			tvBTStatus.setKeepScreenOn(true); 
+		} else {
+			tvBTStatus.setKeepScreenOn(false); 
+		}
+		iExpCountdownMax = Integer.valueOf(prefs.getString("exp_time", "30")) * 10; // Exposure timer
+		iExpCountdownMax = Integer.valueOf(prefs.getString("dev_time", "30")) * 10; // Developer timer
+		iExpCountdownMax = Integer.valueOf(prefs.getString("etch_time", "30")) * 10; // Etch timer
+
+		dDevelopTempMax = Double.parseDouble(prefs.getString("dev_temp_mid", "30")) + Double.parseDouble(prefs.getString("dev_temp_hyst", "1")); // Max develop temperature
+		dDevelopTempMin = Double.parseDouble(prefs.getString("dev_temp_mid", "30")) - Double.parseDouble(prefs.getString("dev_temp_hyst", "1")); // Min develop temperature
+		dDevelopTempMaxIdc = Double.parseDouble(prefs.getString("dev_temp_mid", "30")) + Double.parseDouble(prefs.getString("dev_temp_ok", "3")); // Max develop temperature range
+		dDevelopTempMinIdc = Double.parseDouble(prefs.getString("dev_temp_mid", "30")) - Double.parseDouble(prefs.getString("dev_temp_ok", "3")); // Min develop temperature range
+		dEtchTempMax = Double.parseDouble(prefs.getString("etch_temp_mid", "30")) + Double.parseDouble(prefs.getString("etch_temp_hyst", "1")); // Max etchelop temperature
+		dEtchTempMin = Double.parseDouble(prefs.getString("etch_temp_mid", "30")) - Double.parseDouble(prefs.getString("etch_temp_hyst", "1")); // Min etchelop temperature
+		dEtchTempMaxIdc = Double.parseDouble(prefs.getString("etch_temp_mid", "30")) + Double.parseDouble(prefs.getString("etch_temp_ok", "3")); // Max etchelop temperature range
+		dEtchTempMinIdc = Double.parseDouble(prefs.getString("etch_temp_mid", "30")) - Double.parseDouble(prefs.getString("etch_temp_ok", "3")); // Min etchelop temperature range
+		
+		bDevelopTempIdc = prefs.getBoolean("dev_show_temp_OK",true);	// Color for Developer temperature if within range? 
+		bEtchTempIdc = prefs.getBoolean("exp_show_temp_OK",true);		// Color for Etch temperature if within range? 
+		bBTStatusOkIdc = prefs.getBoolean("bt_green",true);				// Indicate BTStatus in green if connected?
+		
+		bDebugWrite = prefs.getBoolean("bt_green",true);				// Indicate BTStatus in green if connected?
+	}  // get_options_settings
+	
+
+} // MainActivity
+

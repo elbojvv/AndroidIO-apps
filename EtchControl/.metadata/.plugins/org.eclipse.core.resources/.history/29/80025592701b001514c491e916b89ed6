@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout	
+	android:id="@+id/view"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent">
+
+<!-- BLUETOOTH CONTROL -->
+    	
+  	<TextView 
+		android:id="@+id/idBTText"
+		android:text="@string/bluetooth"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+  	<Button
+        android:id="@+id/idBTConnect"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="00dp"
+        android:layout_alignBaseline="@+id/idBTText"
+        android:layout_alignBottom="@+id/idBTText"
+        android:layout_toRightOf="@+id/idBTText"
+        android:text="@string/connect" />
+  	
+  	<TextView 
+		android:id="@+id/idBTStatus"
+		android:text="@string/bluetooth_off"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/idBTConnect"
+        android:layout_alignBottom="@+id/idBTConnect"
+        android:layout_marginLeft="12dp"
+        android:layout_toRightOf="@+id/idBTConnect"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+   		
+  <!-- EXPOSURE CONTROL -->
+    	
+    <View
+        android:id="@+id/idSeperator1"
+    	android:layout_width="fill_parent"
+    	android:layout_height="1dp"
+        android:layout_below="@+id/idBTText"
+        android:layout_marginTop="20dp"
+    	android:background="@android:color/darker_gray"/>
+
+      <TextView
+        android:id="@+id/idExpHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idSeperator1"
+        android:layout_marginTop="8dp"
+        android:text="@string/exposure_control"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+     <TextView
+        android:id="@+id/idExpTimerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idExpHeader"
+        android:layout_marginTop="20dp"
+        android:text="@string/timer"
+        android:textSize="12sp"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+     <Button
+        android:id="@+id/idExpTimerStart"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idExpTimerText"
+        android:layout_alignBottom="@+id/idExpTimerText"
+        android:layout_toRightOf="@+id/idExpTimerText"
+        android:text="@string/start" />
+
+    <Button
+        android:id="@+id/idExpTimerStop"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idExpTimerStart"
+        android:layout_alignBottom="@+id/idExpTimerStart"
+        android:layout_toRightOf="@+id/idExpTimerStart"
+        android:text="@string/stop" />
+
+    <Button
+        android:id="@+id/idExpTimerReset"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idExpTimerStop"
+        android:layout_alignBottom="@+id/idExpTimerStop"
+        android:layout_toRightOf="@+id/idExpTimerStop"
+        android:text="@string/reset" />
+
+    <TextView
+        android:id="@+id/idExpTimerStat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/idExpTimerReset"
+        android:layout_alignBottom="@+id/idExpTimerReset"
+        android:layout_alignBaseline="@+id/idExpTimerReset"
+        android:layout_marginLeft="10dp"
+        android:text="@string/exptime"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+    
+<!-- DEVELOPER CONTROL -->
+    	
+  		<View
+        android:id="@+id/idSeperator2"
+    	android:layout_width="fill_parent"
+    	android:layout_height="1dp"
+        android:layout_below="@+id/idExpTimerText"
+        android:layout_marginTop="20dp"
+    	android:background="@android:color/darker_gray"/>
+ 
+     <TextView
+        android:id="@+id/idDevelopHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idSeperator2"
+        android:layout_marginTop="8dp"
+        android:text="@string/developer_control"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+     <TextView
+        android:id="@+id/idDevelopTempText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idDevelopHeader"
+        android:layout_marginTop="8dp"
+        android:text="@string/heating"
+        android:textSize="12sp"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+     <Button
+        android:id="@+id/idDevelopTempOn"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idDevelopTempText"
+        android:layout_alignBottom="@+id/idDevelopTempText"
+        android:layout_toRightOf="@+id/idDevelopTempText"
+        android:text="@string/buttonon" />
+
+    <Button
+        android:id="@+id/idDevelopTempOff"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idDevelopTempOn"
+        android:layout_alignBottom="@+id/idDevelopTempOn"
+        android:layout_toRightOf="@+id/idDevelopTempOn"
+        android:text="@string/buttonoff" />
+
+    <TextView
+        android:id="@+id/idDevelopTempTemp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/idDevelopTempOff"
+        android:layout_alignBottom="@+id/idDevelopTempOff"
+        android:layout_alignBaseline="@+id/idDevelopTempOff"
+        android:layout_marginLeft="10dp"
+        android:minEms="3"
+        android:gravity="center"
+        android:text="@string/temp"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+ 
+    <TextView
+        android:id="@+id/idDevelopTempStat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/idDevelopTempTemp"
+        android:layout_alignBottom="@+id/idDevelopTempTemp"
+        android:layout_alignBaseline="@+id/idDevelopTempTemp"
+        android:layout_marginLeft="10dp"
+        android:text="@string/heating_stat"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+ 
+    <TextView
+        android:id="@+id/idDevelopTimerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idDevelopTempText"
+        android:layout_marginTop="16dp"
+        android:text="@string/timer"
+        android:textSize="12sp"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+     <Button
+        android:id="@+id/idDevelopTimerStart"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idDevelopTimerText"
+        android:layout_alignBottom="@+id/idDevelopTimerText"
+        android:layout_toRightOf="@+id/idDevelopTimerText"
+        android:text="@string/start" />
+
+    <Button
+        android:id="@+id/idDevelopTimerStop"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idDevelopTimerStart"
+        android:layout_alignBottom="@+id/idDevelopTimerStart"
+        android:layout_toRightOf="@+id/idDevelopTimerStart"
+        android:text="@string/stop" />
+
+    <Button
+        android:id="@+id/idDevelopTimerReset"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idDevelopTimerStop"
+        android:layout_alignBottom="@+id/idDevelopTimerStop"
+        android:layout_toRightOf="@+id/idDevelopTimerStop"
+        android:text="@string/reset" />
+
+    <TextView
+        android:id="@+id/idDevelopTimerStat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/idDevelopTimerReset"
+        android:layout_alignBottom="@+id/idDevelopTimerReset"
+        android:layout_alignBaseline="@+id/idDevelopTimerReset"
+        android:layout_marginLeft="10dp"
+        android:text="@string/exptime"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+ 
+<!-- ETCH TIMER CONTROL -->
+    	
+
+    <View
+        android:id="@+id/idSeperator3"
+    	android:layout_width="fill_parent"
+    	android:layout_height="1dp"
+        android:layout_below="@+id/idDevelopTimerText"
+        android:layout_marginTop="20dp"
+    	android:background="@android:color/darker_gray"/>
+ 
+     <TextView
+        android:id="@+id/idEtchHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idSeperator3"
+        android:layout_marginTop="8dp"
+        android:text="@string/etch_control"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+     <TextView
+        android:id="@+id/idEtchTempText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idEtchHeader"
+        android:layout_marginTop="12dp"
+        android:text="@string/heating"
+        android:textSize="12sp"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+     <Button
+        android:id="@+id/idEtchTempOn"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idEtchTempText"
+        android:layout_alignBottom="@+id/idEtchTempText"
+        android:layout_toRightOf="@+id/idEtchTempText"
+        android:text="@string/buttonon" />
+
+    <Button
+        android:id="@+id/idEtchTempOff"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idEtchTempOn"
+        android:layout_alignBottom="@+id/idEtchTempOn"
+        android:layout_toRightOf="@+id/idEtchTempOn"
+        android:text="@string/buttonoff" />
+
+    <TextView
+        android:id="@+id/idEtchTempTemp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/idEtchTempOff"
+        android:layout_alignBottom="@+id/idEtchTempOff"
+        android:layout_alignBaseline="@+id/idEtchTempOff"
+        android:layout_marginLeft="10dp"
+        android:minEms="3"
+        android:gravity="center"
+        android:text="@string/temp"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+ 
+    <TextView
+        android:id="@+id/idEtchTempStat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/idEtchTempTemp"
+        android:layout_alignBottom="@+id/idEtchTempTemp"
+        android:layout_alignBaseline="@+id/idEtchTempTemp"
+        android:layout_marginLeft="10dp"
+        android:text="@string/heating_stat"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+ 
+     <TextView
+        android:id="@+id/idEtchTimerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idEtchTempText"
+        android:layout_marginTop="20dp"
+        android:text="@string/timer"
+        android:textSize="12sp"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+     <Button
+        android:id="@+id/idEtchTimerStart"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idEtchTimerText"
+        android:layout_alignBottom="@+id/idEtchTimerText"
+        android:layout_toRightOf="@+id/idEtchTimerText"
+        android:text="@string/start" />
+
+    <Button
+        android:id="@+id/idEtchTimerStop"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idEtchTimerStart"
+        android:layout_alignBottom="@+id/idEtchTimerStart"
+        android:layout_toRightOf="@+id/idEtchTimerStart"
+        android:text="@string/stop" />
+
+    <Button
+        android:id="@+id/idEtchTimerReset"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:minHeight="0dp"
+        android:layout_alignBaseline="@+id/idEtchTimerStop"
+        android:layout_alignBottom="@+id/idEtchTimerStop"
+        android:layout_toRightOf="@+id/idEtchTimerStop"
+        android:text="@string/reset" />
+
+    <TextView
+        android:id="@+id/idEtchTimerStat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/idEtchTimerReset"
+        android:layout_alignBottom="@+id/idEtchTimerReset"
+        android:layout_alignBaseline="@+id/idEtchTimerReset"
+        android:layout_marginLeft="10dp"
+        android:text="@string/exptime"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+    
+    
+    
+    
+   <!-- DEBUG CONTROL -->
+    	
+     <View
+        android:id="@+id/idSeperator4"
+    	android:layout_width="fill_parent"
+    	android:layout_height="1dp"
+        android:layout_below="@+id/idEtchTimerText"
+        android:layout_marginTop="20dp"
+    	android:background="@android:color/darker_gray"/>
+    
+
+    <TextView
+        android:id="@+id/idDebugtext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idSeperator4"
+        android:layout_marginTop="5dp"
+        android:text="@string/debugtext"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+    
+    	
+</RelativeLayout>
+

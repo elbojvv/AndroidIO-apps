@@ -1,0 +1,19 @@
+1416758590265	Extracts string 'Bluetooth ' into R.string.bluetooth_
+1416758617515	Extracts string 'Connect' into R.string.connect
+1416758636834	Extracts string 'Bluetooth Off' into R.string.bluetooth_off
+1416758662544	Extracts string 'Exposure control' into R.string.exposure_control
+1416758673955	Extracts string 'Timer ' into R.string.timer_
+1416758684842	Extracts string 'Start' into R.string.start
+1416758695006	Extracts string 'Stop' into R.string.stop
+1416758709619	Extracts string 'Reset' into R.string.reset
+1416758735357	Extracts string '0:00' into R.string._0_00
+1416758749987	Extracts string '0:00' into R.string.exptime
+1416758761847	Extracts string 'Developer control' into R.string.developer_control
+1416758779818	Extracts string 'Heating ' into R.string.heating_
+1416758802776	Extracts string 'On' into R.string.developon
+1416758817892	Extracts string 'Off' into R.string.ofdevelopf
+1416758855935	Extracts string 'Off' into R.string.developoff
+1416758881331	Extracts string '---' into R.string.developtemp
+1416758902508	Extracts string 'Heating off' into R.string.develop_heating_off
+1416758941807	Extracts string 'Etch control' into R.string.etch_control
+1416758962237	Extracts string 'x' into R.string.debugtext

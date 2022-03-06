@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Etch Control</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_usersettingactivity">User Setting</string>
+
+    <!-- Strings voor het menu -->
+    <string name="menu_settings">Settings</string>
+    <string name="menu_exit">Exit</string>
+ 
+    <!-- Strings voor setting menu -->
+    <string name="connection_title">Connection</string>
+    <string name="conn_mode_text">Connection to AndroidIO board</string>
+    <string name="conn_mode_extra">Choose Bluetooth or WiFi connection. Need restart to activate!</string>
+    <string name="bt_address_text">Bluetooth address</string>
+    <string name="bt_address_extra">Bluetooth address of AndroidIO board. See Android settings / Bluetooth.</string>
+    <string name="wifi_address_text">WiFi address</string>
+    <string name="wifi_address_extra">WiFi address of AndroidIO board. See the HDCP your router, or use a port scanner.</string>
+    <string name="wifi_port_text">WiFi port</string>
+    <string name="wifi_port_extra">WiFi port of AndroidIO board. See the manual of the module.</string>
+    <string name="usbhost_port_text">USB board number</string>
+    <string name="usbhost_port_extra">Number of USB host board connected. 0 is first, 1 is second, etc.</string>
+    
+    <string name="control_exp_settings_title">Exposure Control</string>
+    <string name="exp_time_text">Exposure time</string>
+    <string name="exp_time_extra">Set exposure time in seconds</string>
+    <string name="set_exp_buzz_text">External Buzzer</string>
+    <string name="set_exp_buzz_extra">Should the external buzzer buzz when timer is completed?</string>
+    <string name="set_exp_beep_text">Android Beep</string>
+    <string name="set_exp_beep_extra">Should the Android Device beep when timer is completed?</string>
+
+    <string name="control_dev_settings_title">developer Control</string>
+    <string name="dev_time_text">Developer time</string>
+    <string name="dev_time_extra">Set developer time in seconds</string>
+    <string name="set_dev_buzz_text">External Buzzer</string>
+    <string name="set_dev_buzz_extra">Should the external buzzer buzz when timer is completed?</string>
+    <string name="set_dev_beep_text">Android Beep</string>
+    <string name="set_dev_beep_extra">Should the Android Device beep when timer is completed?</string>
+    <string name="dev_ntc_text">Temperature sensor</string>
+    <string name="dev_ntc_extra">Indicate whether a temperature sensor is present.</string>
+    <string name="dev_temp_text">Temperature</string>
+    <string name="dev_temp_extra">Target temperature for developer bath (Celsius).</string>
+    <string name="dev_hyst_text">Hysteresis</string>
+    <string name="dev_hyst_extra">Hysteresis around the target temperature (Celsius).</string>
+    <string name="set_dev_show_temp_ok_text">Show temperature OK</string>
+    <string name="set_dev_show_temp_ok_extra">Should the temperature show green/read when the temperature is in the right range?</string>
+    <string name="dev_temp_ok_text">Temperature range OK</string>
+    <string name="dev_temp_ok_extra">Range around the target temperature for OK (Celsius).</string>
+    <string name="dev_beta_text">Beta value</string>
+    <string name="dev_beta_extra">Beta value of the NTC. See datasheet of the NTC.</string>
+    
+    <string name="control_etch_settings_title">Etch Control</string>
+    <string name="etch_time_text">Etch time</string>
+    <string name="etch_time_extra">Set etch time in seconds</string>
+    <string name="set_etch_buzz_text">External Buzzer</string>
+    <string name="set_etch_buzz_extra">Should the external buzzer buzz when timer is completed?</string>
+    <string name="set_etch_beep_text">Android Beep</string>
+    <string name="set_etch_beep_extra">Should the Android etchice beep when timer is completed?</string>
+    <string name="etch_ntc_text">Temperature sensor</string>
+    <string name="etch_ntc_extra">Indicate whether a temperature sensor is present.</string>
+    <string name="etch_temp_text">Temperature</string>
+    <string name="etch_temp_extra">Target temperature for etch bath (Celsius).</string>
+    <string name="etch_hyst_text">Hysteresis</string>
+    <string name="etch_hyst_extra">Hysteresis around the target temperature (Celsius).</string>
+    <string name="set_etch_show_temp_ok_text">Show temperature OK</string>
+    <string name="set_etch_show_temp_ok_extra">Should the temperature show green/read when the temperature is in the right range?</string>
+    <string name="etch_temp_ok_text">Temperature range OK</string>
+    <string name="etch_temp_ok_extra">Range around the target temperature for OK (Celsius).</string>
+    <string name="etch_beta_text">Beta value</string>
+    <string name="etch_beta_extra">Beta value of the NTC. See datasheet of the NTC.</string>
+    
+    <string name="gui_settings_title">GUI settings</string>
+    <string name="set_sleep_text">Prohibit screensaver</string>
+    <string name="set_sleep_extra">Prohibit screensaver and leave screen on.</string>
+    <string name="set_bt_green_text">Connection status green</string>
+    <string name="set_bt_green_extra">Color the connection indication green when connected.</string>
+    <string name="set_debug_text">Debug</string>
+    <string name="set_debug_extra">Show response of the AndroidIO board.</string>
+
+    <!-- STRINGS FOR ETCH CONTROL GUI -->
+    <string name="bluetooth">"Connection "</string>
+    <string name="connect">Connect</string>
+    <string name="bluetooth_off">Connection Off</string>
+    <string name="exposure_control">Exposure control</string>
+    <string name="timer">"Timer "</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="reset">Reset</string>
+    <string name="exptime">0:00</string>
+    <string name="developer_control">Developer control</string>
+    <string name="heating">"Heating "</string>
+    <string name="buttonon">On</string>
+    <string name="buttonoff">Off</string>
+    <string name="temp">---</string>
+    <string name="heating_stat">Heating off</string>
+    <string name="etch_control">Etch control</string>
+    <string name="debugtext"> </string>
+       
+</resources>

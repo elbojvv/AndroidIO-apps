@@ -1,0 +1,6 @@
+INDEX VERSION 1.126+C:\data\eclipseworkspace\Datalogger_v30\.metadata\.plugins\org.eclipse.jdt.core
+3909985881.index
+1371981989.index
+2585014500.index
+3688245065.index
+1284074322.index

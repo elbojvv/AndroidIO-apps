@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Datalogger</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_usersettingactivity">User Setting</string>
+
+    <!-- Strings for spinners -->
+    <string name="measurements_prompt"># measurements per write</string>
+    <string name="period_prompt">Write frequency</string>
+    <string name="sumavg_prompt">Sum or avarage</string>
+    
+    <!-- Strings voor het menu -->
+    <string name="menu_settings">Settings</string>
+    <string name="menu_exit">Exit</string>
+
+    <!-- Strings voor setting menu -->
+    <string name="connection_title">Connection - Need restart!</string>
+    <string name="conn_mode_text">Connection to AndroidIO board.</string>
+    <string name="conn_mode_extra">Choose Bluetooth or WiFi connection. Need restart to activate!</string>
+    <string name="bt_address_text">Bluetooth address</string>
+    <string name="bt_address_extra">Bluetooth address of AndroidIO board. See Android settings / Bluetooth.</string>
+    <string name="wifi_address_text">WiFi address</string>
+    <string name="wifi_address_extra">WiFi address of AndroidIO board. See the HDCP your router, or use a port scanner.</string>
+    <string name="wifi_port_text">WiFi port</string>
+    <string name="wifi_port_extra">WiFi port of AndroidIO board. See the manual of the module.</string>
+    <string name="usbhost_port_text">USB board number</string>
+    <string name="usbhost_port_extra">Number of USB host board connected. 0 is first, 1 is second, etc.</string>
+    <string name="set_export_title">Grafiek</string>
+    <string name="set_stretch">Stretch graph</string>
+    <string name="set_stretch_extra">Stretch (zoom) graph if pulled beyond the edge</string>
+    <string name="set_csv">CSV character</string>
+    <string name="set_csv_extra">Choose CSV character</string>
+    <string name="set_misc_title">Other options</string>
+    <string name="set_sleep">Let screen on</string>
+    <string name="set_sleep_extra">prevent screen from going into sleep</string>
+    <string name="set_debug">Debug</string>
+    <string name="set_debug_extra">Show the data of the AndroidIO board.</string>
+
+</resources>

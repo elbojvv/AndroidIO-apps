@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory android:title="@string/connection_title" >
+        <ListPreference
+            android:defaultValue="1"
+            android:entries="@array/conn_mode_e"
+            android:entryValues="@array/conn_mode_v"
+            android:key="conn_mode"
+            android:title="@string/conn_mode_text" 
+            android:summary="@string/conn_mode_extra" />
+
+        <EditTextPreference
+            android:key="bt_address"
+            android:defaultValue="00:00:00:00:00:00"
+            android:title="@string/bt_address_text" 
+            android:summary="@string/bt_address_extra" />
+            
+        <EditTextPreference
+            android:key="wifi_address"
+            android:defaultValue="192.168.178.25"
+            android:title="@string/wifi_address_text" 
+            android:summary="@string/wifi_address_extra" />
+            
+        <EditTextPreference
+            android:key="wifi_port"
+            android:defaultValue="2000"
+            android:inputType="number"
+            android:title="@string/wifi_port_text" 
+            android:summary="@string/wifi_port_extra" />
+            
+        <EditTextPreference
+            android:key="usbhost_port"
+            android:defaultValue="0"
+            android:inputType="number"
+            android:title="@string/usbhost_port_text" 
+            android:summary="@string/usbhost_port_extra" />
+        
+        </PreferenceCategory>
+        
+    <PreferenceCategory android:title="@string/control_exp_settings_title" >
+        <EditTextPreference
+            android:key="exp_time"
+            android:defaultValue="30"
+            android:inputType="number"
+            android:title="@string/exp_time_text" 
+            android:summary="@string/exp_time_extra" />
+
+        <CheckBoxPreference
+            android:key="exp_buzz"
+            android:defaultValue="true"
+            android:title="@string/set_exp_buzz_text" 
+            android:summary="@string/set_exp_buzz_extra" />
+        
+        <CheckBoxPreference
+            android:key="exp_beep"
+            android:defaultValue="true"
+            android:title="@string/set_exp_beep_text" 
+            android:summary="@string/set_exp_beep_extra" />
+        
+        </PreferenceCategory>
+        
+    <PreferenceCategory android:title="@string/control_dev_settings_title" >
+        <EditTextPreference
+            android:key="dev_time"
+            android:defaultValue="30"
+            android:inputType="number"
+            android:title="@string/dev_time_text" 
+            android:summary="@string/dev_time_extra" />
+            
+        <CheckBoxPreference
+            android:key="dev_buzz"
+            android:defaultValue="true"
+            android:title="@string/set_dev_buzz_text" 
+            android:summary="@string/set_dev_buzz_extra" />
+        
+        <CheckBoxPreference
+            android:key="dev_beep"
+            android:defaultValue="true"
+            android:title="@string/set_dev_beep_text" 
+            android:summary="@string/set_dev_beep_extra" />
+        
+        <CheckBoxPreference
+            android:key="dev_ntc"
+            android:defaultValue="true"
+            android:title="@string/dev_ntc_text" 
+            android:summary="@string/dev_ntc_extra" />
+        
+        <EditTextPreference
+            android:key="dev_temp_mid"
+            android:defaultValue="20"
+            android:inputType="number"
+            android:title="@string/dev_temp_text" 
+            android:summary="@string/dev_temp_extra" />
+            
+        <EditTextPreference
+            android:key="dev_temp_hyst"
+            android:defaultValue="1"
+            android:inputType="number"
+            android:title="@string/dev_hyst_text" 
+            android:summary="@string/dev_hyst_extra" />
+            
+        <CheckBoxPreference
+            android:key="dev_show_temp_OK"
+            android:defaultValue="true"
+            android:title="@string/set_dev_show_temp_ok_text" 
+            android:summary="@string/set_dev_show_temp_ok_extra" />
+        
+        <EditTextPreference
+            android:key="dev_temp_OK"
+            android:defaultValue="3"
+            android:inputType="number"
+            android:title="@string/dev_temp_text" 
+            android:summary="@string/dev_temp_extra" />
+            
+        <EditTextPreference
+            android:key="dev_beta"
+            android:defaultValue="3880"
+            android:inputType="number"
+            android:title="@string/dev_beta_text" 
+            android:summary="@string/dev_beta_extra" />
+            
+        </PreferenceCategory>
+        
+    <PreferenceCategory android:title="@string/control_etch_settings_title" >
+        <EditTextPreference
+            android:key="etch_time"
+            android:defaultValue="30"
+            android:inputType="number"
+            android:title="@string/etch_time_text" 
+            android:summary="@string/etch_time_extra" />
+            
+        <CheckBoxPreference
+            android:key="etch_buzz"
+            android:defaultValue="true"
+            android:title="@string/set_etch_buzz_text" 
+            android:summary="@string/set_etch_buzz_extra" />
+        
+        <CheckBoxPreference
+            android:key="etch_beep"
+            android:defaultValue="true"
+            android:title="@string/set_etch_beep_text" 
+            android:summary="@string/set_etch_beep_extra" />
+        
+        <CheckBoxPreference
+            android:key="etch_ntc"
+            android:defaultValue="true"
+            android:title="@string/etch_ntc_text" 
+            android:summary="@string/etch_ntc_extra" />
+        
+        <EditTextPreference
+            android:key="etch_temp_mid"
+            android:defaultValue="45"
+            android:inputType="number"
+            android:title="@string/etch_temp_text" 
+            android:summary="@string/etch_temp_extra" />
+            
+        <EditTextPreference
+            android:key="etch_temp_hyst"
+            android:defaultValue="1"
+            android:inputType="number"
+            android:title="@string/etch_hyst_text" 
+            android:summary="@string/etch_hyst_extra" />
+            
+        <CheckBoxPreference
+            android:key="etch_show_temp_OK"
+            android:defaultValue="true"
+            android:title="@string/set_etch_show_temp_ok_text" 
+            android:summary="@string/set_etch_show_temp_ok_extra" />
+        
+        <EditTextPreference
+            android:key="etch_temp_OK"
+            android:defaultValue="3"
+            android:inputType="number"
+            android:title="@string/etch_temp_ok_text" 
+            android:summary="@string/etch_temp_ok_extra" />
+            
+        <EditTextPreference
+            android:key="etch_beta"
+            android:defaultValue="3880"
+            android:inputType="number"
+            android:title="@string/etch_beta_text" 
+            android:summary="@string/etch_beta_extra" />
+            
+        </PreferenceCategory>
+        
+    <PreferenceCategory android:title="@string/gui_settings_title" >
+        <CheckBoxPreference
+            android:key="awake"
+            android:defaultValue="true"
+            android:title="@string/set_sleep_text" 
+            android:summary="@string/set_sleep_extra" />
+
+        <CheckBoxPreference
+            android:key="bt_green"
+            android:defaultValue="true"
+            android:title="@string/set_bt_green_text" 
+            android:summary="@string/set_bt_green_extra" />
+
+        <CheckBoxPreference
+            android:key="debug"
+            android:defaultValue="true"
+            android:title="@string/set_debug_text" 
+            android:summary="@string/set_debug_extra" />
+        
+        </PreferenceCategory>
+
+</PreferenceScreen>

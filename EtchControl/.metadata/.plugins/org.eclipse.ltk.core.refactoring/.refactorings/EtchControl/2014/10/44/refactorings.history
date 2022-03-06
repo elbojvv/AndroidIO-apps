@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename package &apos;com.example.oefenbord&apos; to &apos;com.example.datalogger&apos;&#x0D;&#x0A;- Original project: &apos;OefenBord&apos;&#x0D;&#x0A;- Original element: &apos;OefenBord/src/com.example.oefenbord&apos;&#x0D;&#x0A;- Renamed element: &apos;OefenBord/src/com.example.datalogger&apos;&#x0D;&#x0A;- Update references to refactored element&#x0D;&#x0A;- Update textual occurrences in comments and strings&#x0D;&#x0A;- Rename subpackages of the package" description="Rename package &apos;com.example.oefenbord&apos;" flags="589830" hierarchical="true" id="org.eclipse.jdt.ui.rename.package" input="/src&lt;com.example.oefenbord" name="com.example.datalogger" qualified="false" references="true" stamp="1414701418229" textual="false" version="1.0"/>
+</session>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Arrays for menu -->
+    <string-array name="conn_mode_e">
+        <item>Bluetooth</item>
+        <item>WiFi</item>
+        <item>USB</item>
+        <item>USB Host</item>
+        </string-array>
+    <string-array name="conn_mode_v">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        </string-array>
+    <string-array name="csv_key">
+        <item>;</item>
+        <item>,</item>
+        <item>:</item>
+        <item>tab</item>
+        <item>space</item>
+    </string-array>
+    <string-array name="csv_value">
+        <item>59</item>
+        <item>44</item>
+        <item>58</item>
+        <item>9</item>
+        <item>32</item>
+    </string-array>
+
+    <!-- Arrays for spinners -->
+    <string-array name="measurements_array">
+        <item>1</item>
+        <item>64</item>
+        <item>2048</item>
+        <item>4194304</item>
+    </string-array>
+    <string-array name="period_array">
+        <item>10 ms</item>
+        <item>100 ms</item>
+        <item>1 s</item>
+        <item>15 s</item>
+        <item>1 min</item>
+        <item>15 min</item>
+        <item>1 hour</item>
+        <item>1 day</item>
+    </string-array>
+    <string-array name="sumavg_array">
+        <item>No</item>
+        <item>Always sum</item>
+        <item>Always avarage</item>
+        <item>Avarage, or sum if 1 bit</item>
+    </string-array>
+
+</resources>

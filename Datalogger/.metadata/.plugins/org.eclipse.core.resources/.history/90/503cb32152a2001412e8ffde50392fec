@@ -1,0 +1,1928 @@
+package com.example.datalogger;
+
+// gebruik ctrl-shift-o om de import automatisch aan te vullen
+// Let op: android.R betekent een fout in 1 van de xml files
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PointF;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.RelativeLayout.LayoutParams;
+import android.widget.ScrollView;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.androidplot.xy.LineAndPointFormatter;
+import com.androidplot.xy.PointLabelFormatter;
+import com.androidplot.xy.SimpleXYSeries;
+import com.androidplot.xy.XYPlot;
+import com.androidplot.xy.XYSeries;
+
+public class MainActivity extends Activity  {
+
+	// ************************************************************************************************
+	// *************************  Variabelen en objecten Declaratie************************************
+	// ************************************************************************************************
+	private static String BTAddress = "20:14:05:20:12:11"; 	  // MAC-address of Bluetooth module (you must edit this line)
+	private static String IPAddress = "192.168.178.25"; 	  // MAC-address of Bluetooth module (you must edit this line)
+	private static int IPPort = 2000;
+	//	private static String BTAddress = "00:10:05:25:00:01"; 	  // MAC-address of Bluetooth module (you must edit this line)
+
+	// Objecten voor grafische elementen
+	TextView tvBTStatus; 	// Declareer TextView object; wordt gekoppeld aan idBTStatus in activity_main.xml
+	TextView tvLogStatus;   // Declareer TextView object; wordt gekoppeld aan idTemperatuurtext in activity_main.xml
+	TextView tvDebug; 		// Declareer TextView object; wordt gekoppeld aan idTouchtext in activity_main.xml
+	Button btBTConnect; 	// Declareer Button object; wordt gekoppeld aan idBTConnect in activity_main.xml
+	Button btLogStart; 		// Declareer Button object; wordt gekoppeld aan idLED1aan in activity_main.xml
+	Button btLogRestart; 		// Declareer Button object; wordt gekoppeld aan idLED1uit in activity_main.xml
+	Button btLogStop; 		// Declareer Button object; wordt gekoppeld aan idLED1uit in activity_main.xml
+	Button btDownload; 		// Declareer Button object; wordt gekoppeld aan idLED1aan in activity_main.xml
+	Button btUpdate; 		// Declareer Button object; wordt gekoppeld aan idLED1uit in activity_main.xml
+	CheckBox cbSave;	// Checkbox for showing pin settings in GUI
+	ImageView imGraph;	// Declareer ImageView object; wordt gekoppeld aan idGrafiek in activity_main.xml
+	RelativeLayout rlPinSettings; // Relative layout for pin settings
+	CheckBox cbShowPins;	// Checkbox for showing pin settings in GUI
+	CheckBox cbSaveEEprom;	// Checkbox for showing pin settings in GUI
+	CheckBox cbAutoStart;	// Checkbox for showing pin settings in GUI
+	CheckBox cbLoop;	// Checkbox for showing pin settings in GUI
+	Spinner spMeasurements; //
+	Spinner spPeriod; //
+	Spinner spSumAvg; //
+	TextView tvMeasurements; //
+	TextView tvPeriod; //
+	TextView tvSumAvg; //
+	CheckBox cbMax;	// Checkbox for showing pin settings in GUI
+	CheckBox cbMin;	// Checkbox for showing pin settings in GUI
+	CheckBox cbSD;	// Checkbox for showing pin settings in GUI
+	CheckBox cbFlashLed;	// Checkbox for showing pin settings in GUI
+	ScrollView svScrollView;
+	XYPlot plot; // AndroidPlot
+
+	TextView[] tvArrPinName = new TextView[24];
+	Button[] btArr = new Button[24];
+	Spinner[] spArrFunction = new Spinner[24];
+	TextView[] tvArrPP2Descr = new TextView[24];
+	EditText[] etArrPP2Value = new EditText[24];
+	int[] iAllowedPinFunction = new int[24];
+	boolean[] bPP2Vis = new boolean[24];
+	int[][] iPP0Value = new int[24][20];
+	int[][] iPP1Value = new int[24][20];
+	String[][] sPP2Text = new String[24][20];
+	
+	boolean bThreadRun=true;
+
+	// Database voor user settings
+	SharedPreferences prefs;	// het object prefs is de database van de settings
+	OnSharedPreferenceChangeListener spListener;  // listener die wordt aangeroepen als de settings veranderen
+
+	// Handler om messages tussen objecten te versturen
+	Handler hndMessage;		// De handler die gebruikt wordt om de messages te versturen
+	final int RECIEVE_MESSAGE_BTSTATUS = 1;		// Constante voor Handler: Bluetooth status
+	final int RECIEVE_MESSAGE_BTDATA = 2;		// Constante voor Handler: Ontvangen Bluetooth data
+	final int RECIEVE_MESSAGE_UPDATE_GRAPH = 3;		// Constante voor Handler: Maak grafiek
+	final int RECIEVE_MESSAGE_UPDATE_GUI = 4;		// Constante voor Handler: Maak grafiek
+	final int RECIEVE_MESSAGE_TEST = 5;
+	final int RECIEVE_MESSAGE_DEBUG = 6;
+
+	// variabelen voor de grafiek
+	final int grafArrayMax=31;							// Aantal bars
+	double[] graphArray = new double[grafArrayMax+1];	// Array met de waarden van de bars
+	int graphArrayPositie=0;							// Positie in de array
+	boolean runGraph = false;							// Boolean die aangeeft of de grafiek moet gevuld worden
+
+	// Object voor interactie met Bluetooth
+	IOBoardFunctions IOBoard = new IOBoardFunctions();
+	//BTFunctions MyBluetooth = new BTFunctions(); // Alle Bluetooth functies zijn nu beschikbaar in het object MyBluetooth
+	//WiFiFunctions MyWiFi = new WiFiFunctions(); // Alle Bluetooth functies zijn nu beschikbaar in het object MyBluetooth
+	int iIOBoardConnectionMode = 1;
+
+	boolean bWriteChecked;
+	final int writebuffermax = 100;
+	String[] writebuffercomm = new String[writebuffermax];
+	String[] writebuffercheck = new String[writebuffermax];
+	String[] writebufferresponse = new String[writebuffermax];
+	int[] writebufferdelay = new int[writebuffermax];
+	int writebufferinpos=0;
+	int writebufferoutpos=0;
+	int writedelaycounter=0;
+
+	// Variabelen voor datalogger
+	//byte[] i2cBuffer = new byte[65536]; *** Byte in java is signed!
+	int[] i2cBuffer = new int[65536];
+	int c3_address, c3_base, c3_count;
+	boolean bC3_read=true;
+	boolean bC4_read=true;
+	int iC3_ever_read=0; // bit 0 and 1 indicate whether the first 64 byte (two times 32) is ever read 
+	int c4_block=0;
+	int c4_status=0;
+	int c4_posbyte=0;
+	int c4_posbit=0;
+	int c4_mcount=0;
+	int c4_mscount=0;
+	boolean graph_refresh=false;
+	double[] i2cData = new double[65536];
+	int graph_max=0;
+	int run_cnt;
+	boolean bC3_download=false;
+	int iC3_download_half;
+	boolean bC3_graph=false;
+	int iC4_readblock, iC4_readblockmax;
+	int iC4_readblock_old=0;
+	int iC4_loopcnt=0;
+	int downloadcount, downloadmax;
+
+
+	PrintWriter DebugFile = null;
+	FileWriter fw;
+	File ff;
+
+	String[] debug_AIO = new String[10];
+
+
+	final int maxchannel=16;
+	final int maxpoints=32768;
+	final int maxlines=4;
+	int[] bits_chan_sum = new int[maxchannel];
+	int[] bits_chan_max = new int[maxchannel];
+	int[] bits_chan_min = new int[maxchannel];
+	int[] bits_chan_sd = new int[maxchannel];
+
+	int chan_chn_max=0;
+	int chan_idx_max=0;
+	int[][] chan_sum = new int[maxpoints][maxchannel];
+	int[][] chan_max = new int[maxpoints][maxchannel];
+	int[][] chan_min = new int[maxpoints][maxchannel];
+	int[][] chan_sd = new int[maxpoints][maxchannel];
+	boolean[][] bchan_exist = new boolean[maxlines][maxchannel];
+
+	int bits_per_measurement=0;
+
+	PrintWriter dataFile = null;
+
+	// AndroidPlot
+    // Definition of the touch states
+    static final int NONE = 0;
+    static final int ONE_FINGER_DRAG = 1;
+    static final int TWO_FINGERS_DRAG = 2;
+    int mode = NONE;
+    PointF firstFinger;
+    float lastScrolling;
+    float distBetweenFingers;
+    float lastZooming;
+ 
+    
+	// ************************************************************************************************
+	// *************************************  Methoden  ***********************************************
+	// ************************************************************************************************
+
+	@SuppressLint("HandlerLeak") 	// Voorkomt warning bij de message handler
+
+	@Override
+	public void onCreate(Bundle savedInstanceState){  // Eerste stap in de Android life cycle 
+		LayoutParams lpTmp;
+
+		super.onCreate(savedInstanceState);
+
+		prefs = PreferenceManager.getDefaultSharedPreferences(this);	// de usersettings database voor deze app
+
+		setContentView(R.layout.activity_main);		// Creeer de layout op basis van de xml file src/layout/activity_main.xml
+
+		final int iINPUT=1;
+		final int iINPUTWPU=2;
+		final int iADC=8;
+		final int iCPS=16;
+		final int iCOUNTER=64;
+
+		iAllowedPinFunction[0]=iINPUT+iADC+iCPS; 	// A0
+		iAllowedPinFunction[1]=iINPUT+iADC+iCPS; 	// A1
+		iAllowedPinFunction[2]=iINPUT+iADC+iCPS; 	// A2
+		iAllowedPinFunction[3]=iINPUT+iADC+iCPS; 	// A3
+		iAllowedPinFunction[4]=iINPUT+iADC+iCPS; 	// A4
+		iAllowedPinFunction[5]=iINPUT+iADC+iCPS; 	// A5
+		iAllowedPinFunction[6]=iINPUT+iADC; 		// A6
+		iAllowedPinFunction[7]=iINPUT+iADC;		 	// A7
+		iAllowedPinFunction[8]=iINPUT+iINPUTWPU+iADC+iCPS; 		// B0
+		iAllowedPinFunction[9]=iINPUT+iINPUTWPU+iADC+iCPS; 		// B1
+		iAllowedPinFunction[10]=iINPUT+iINPUTWPU+iADC+iCPS; 	// B2
+		iAllowedPinFunction[11]=iINPUT+iINPUTWPU+iADC+iCPS; 	// B3
+		iAllowedPinFunction[12]=iINPUT+iINPUTWPU+iADC+iCPS; 	// B4
+		iAllowedPinFunction[13]=iINPUT+iINPUTWPU+iADC+iCPS; 	// B5
+		iAllowedPinFunction[14]=iINPUT+iINPUTWPU;	 			// B6
+		iAllowedPinFunction[15]=iINPUT+iINPUTWPU; 				// B7
+		iAllowedPinFunction[16]=iINPUT+iCOUNTER; 		// C0
+		iAllowedPinFunction[17]=iINPUT; 				// C1
+		iAllowedPinFunction[18]=iINPUT; 				// C2
+		iAllowedPinFunction[19]=iINPUT; 				// C3
+		iAllowedPinFunction[20]=iINPUT; 				// C4
+		iAllowedPinFunction[21]=iINPUT; 				// C5
+		iAllowedPinFunction[22]=0; 						// C6
+		iAllowedPinFunction[23]=0;		 				// C7
+
+		btBTConnect = (Button) findViewById(R.id.idBTConnect);	// 
+		tvBTStatus=(TextView)findViewById(R.id.idBTStatus);		// 
+		tvLogStatus=(TextView)findViewById(R.id.idLogStatus);   // 
+		tvDebug=(TextView)findViewById(R.id.idDebugtext);		// 
+		btDownload = (Button) findViewById(R.id.idDownload);		// 
+		btLogStart = (Button) findViewById(R.id.idLogStart);		// 
+		btLogRestart = (Button) findViewById(R.id.idLogRestart);		// 
+		btLogStop = (Button) findViewById(R.id.idLogStop);		// 
+		btUpdate = (Button) findViewById(R.id.idUpdate);		// 
+		cbSave = (CheckBox) findViewById(R.id.idSave);
+		imGraph = (ImageView) findViewById(R.id.idGraph);	// Grafiek ruimte
+		rlPinSettings = (RelativeLayout) findViewById(R.id.idPinSettings);
+		cbShowPins = (CheckBox) findViewById(R.id.idShowPins);
+		//cbShowPins.setChecked(true); ->  android:checked="true"
+		cbSaveEEprom = (CheckBox) findViewById(R.id.idSaveEEprom);
+		cbAutoStart = (CheckBox) findViewById(R.id.idAutoStart);
+		cbLoop = (CheckBox) findViewById(R.id.idLoop);
+		spMeasurements = (Spinner) findViewById(R.id.idMeasurements);
+		spMeasurements.setSelection(0);
+		spPeriod = (Spinner) findViewById(R.id.idPeriod);
+		spPeriod.setSelection(0);
+		spSumAvg = (Spinner) findViewById(R.id.idSumAvg);
+		spSumAvg.setSelection(2);
+		tvMeasurements = (TextView)findViewById(R.id.idtvMeasurements );	; //
+		tvPeriod = (TextView)findViewById(R.id.idtvPeriod);	; //
+		tvSumAvg = (TextView)findViewById(R.id.idtvSumAvg);	; //
+		cbMax = (CheckBox) findViewById(R.id.idMax);
+		cbMin = (CheckBox) findViewById(R.id.idMin);
+		cbSD = (CheckBox) findViewById(R.id.idSD);
+		cbFlashLed = (CheckBox) findViewById(R.id.idFlashLed);
+		svScrollView = (ScrollView) findViewById(R.id.scrollview);
+		plot = (XYPlot) findViewById(R.id.mySimpleXYPlot);
+
+		for (int i=0; i<22; i++) {
+			//			
+			tvArrPinName[i] = new TextView(this);
+			lpTmp=new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+			if (i>0) {
+				lpTmp.addRule(RelativeLayout.BELOW, i+1000-1);
+				lpTmp.addRule(RelativeLayout.ALIGN_LEFT, i+1000-1);
+			} else {
+				lpTmp.addRule(RelativeLayout.BELOW, R.id.idShowPins);
+				lpTmp.addRule(RelativeLayout.ALIGN_LEFT, R.id.idShowPins);
+			}
+			lpTmp.setMargins(0, 20, 0, 0); // Margin to top: 10dp (left, top, right, bottom)
+			//			if ((i>0) && (i%4!=0)) {
+			//				lpTmp.addRule(RelativeLayout.RIGHT_OF, i+512-1);
+			//				lpTmp.addRule(RelativeLayout.ALIGN_BOTTOM, i+512-1);
+			//			}
+			//			if ((i>0) && (i%4==0)) {
+			//				lpTmp.addRule(RelativeLayout.BELOW, i+512-4);
+			//				lpTmp.addRule(RelativeLayout.ALIGN_LEFT, i+512-4);
+			//			} 
+			tvArrPinName[i].setLayoutParams(lpTmp);
+			tvArrPinName[i].setText(pin_to_name(i));
+			//tvArr[i].setTextSize(8);
+			tvArrPinName[i].setId(i+1000);
+			rlPinSettings.addView(tvArrPinName[i]);
+
+			spArrFunction[i] = new Spinner(this);
+
+			lpTmp=new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+			lpTmp.addRule(RelativeLayout.RIGHT_OF, i+1000);
+			lpTmp.addRule(RelativeLayout.ALIGN_BOTTOM, i+1000);
+			spArrFunction[i].setLayoutParams(lpTmp);
+			spArrFunction[i].setId(i+1100);
+			spArrFunction[i].setPrompt("Mode");
+			rlPinSettings.addView(spArrFunction[i]);
+
+			tvArrPP2Descr[i]=new TextView(this);
+			lpTmp=new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+			lpTmp.addRule(RelativeLayout.RIGHT_OF, i+1100);
+			lpTmp.addRule(RelativeLayout.ALIGN_BOTTOM, i+1000);
+			tvArrPP2Descr[i].setLayoutParams(lpTmp);
+			tvArrPP2Descr[i].setText("# meas.");
+			tvArrPP2Descr[i].setId(i+1200);
+			rlPinSettings.addView(tvArrPP2Descr[i]);
+
+			etArrPP2Value[i]=new EditText(this);
+			lpTmp=new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+			lpTmp.addRule(RelativeLayout.RIGHT_OF, i+1200);
+			lpTmp.addRule(RelativeLayout.ALIGN_BOTTOM, i+1000);
+			etArrPP2Value[i].setLayoutParams(lpTmp);
+			etArrPP2Value[i].setText("0");
+			etArrPP2Value[i].setId(i+1300);
+			rlPinSettings.addView(etArrPP2Value[i]);
+
+			List<String> list = new ArrayList<String>();
+			int poscnt=0;
+			list.add("Not assigned"); sPP2Text[i][poscnt]=" "; iPP1Value[i][poscnt]=0; bPP2Vis[i]=false; poscnt++;
+			if ((iAllowedPinFunction[i] & iINPUT) !=0) {list.add("Input, 1 bit"); sPP2Text[i][poscnt]=" "; iPP0Value[i][poscnt]=0; iPP1Value[i][poscnt]=0+128; bPP2Vis[i]=false; poscnt++;}
+			if ((iAllowedPinFunction[i] & iINPUT) !=0) {list.add("Input, latch"); sPP2Text[i][poscnt]=" "; iPP0Value[i][poscnt]=0; iPP1Value[i][poscnt]=16+128; bPP2Vis[i]=false; poscnt++;}
+			if ((iAllowedPinFunction[i] & iINPUTWPU) !=0) {list.add("Input WPU, 1 bit"); sPP2Text[i][poscnt]=" "; iPP0Value[i][poscnt]=1; iPP1Value[i][poscnt]=0+128; bPP2Vis[i]=false; poscnt++; }
+			if ((iAllowedPinFunction[i] & iINPUTWPU) !=0) {list.add("Input WPU, latch"); sPP2Text[i][poscnt]=" "; iPP0Value[i][poscnt]=1; iPP1Value[i][poscnt]=16+128; bPP2Vis[i]=false; poscnt++; }
+			if ((iAllowedPinFunction[i] & iADC) !=0) {list.add("ADC, Vdd, avg"); sPP2Text[i][poscnt]="#meas."; iPP0Value[i][poscnt]=3; iPP1Value[i][poscnt]=0+128; bPP2Vis[i]=true; poscnt++; }
+			if ((iAllowedPinFunction[i] & iADC) !=0) {list.add("ADC, Vdd, sum"); sPP2Text[i][poscnt]="#meas."; iPP0Value[i][poscnt]=3; iPP1Value[i][poscnt]=2+128; bPP2Vis[i]=true; poscnt++; }
+			if ((iAllowedPinFunction[i] & iADC) !=0) {list.add("ADC, 2V, avg"); sPP2Text[i][poscnt]="#meas."; iPP0Value[i][poscnt]=3; iPP1Value[i][poscnt]=1+128; bPP2Vis[i]=true; poscnt++; }
+			if ((iAllowedPinFunction[i] & iADC) !=0) {list.add("ADC, 2V, sum"); sPP2Text[i][poscnt]="#meas."; iPP0Value[i][poscnt]=3; iPP1Value[i][poscnt]=3+128; bPP2Vis[i]=true; poscnt++; }
+			if ((iAllowedPinFunction[i] & iCPS) !=0) {list.add("CPS"); sPP2Text[i][poscnt]="threshold"; iPP0Value[i][poscnt]=4; iPP1Value[i][poscnt]=128; bPP2Vis[i]=true; poscnt++; }
+			if ((iAllowedPinFunction[i] & iCOUNTER) !=0) {list.add("Counter"); sPP2Text[i][poscnt]=" "; iPP0Value[i][poscnt]=6; iPP1Value[i][poscnt]=0+128; bPP2Vis[i]=false; poscnt++; }
+			if ((iAllowedPinFunction[i] & iCOUNTER) !=0) {list.add("Frequency"); sPP2Text[i][poscnt]=" "; iPP0Value[i][poscnt]=6; iPP1Value[i][poscnt]=3+128; bPP2Vis[i]=false; poscnt++; }
+			ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>
+			(this, android.R.layout.simple_spinner_item,list);
+
+			dataAdapter.setDropDownViewResource
+			(android.R.layout.simple_spinner_dropdown_item);
+
+			spArrFunction[i].setAdapter(dataAdapter);
+			spArrFunction[i].setSelection(0);
+			setSpinnerListeners(i);
+
+			tvArrPP2Descr[i].setVisibility(View.GONE);
+			//etArrPP2Value[i].setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+			etArrPP2Value[i].setVisibility(View.GONE);
+
+		}
+		// see EditText focus problem: http://stackoverflow.com/questions/8100831/stop-scrollview-from-setting-focus-on-edittext
+		svScrollView.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
+		svScrollView.setFocusable(true);
+		svScrollView.setFocusableInTouchMode(true);
+		svScrollView.setOnTouchListener(new View.OnTouchListener() {
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				v.requestFocusFromTouch();
+				return false;
+			}
+		});
+		showPinFunctions(false);	// start with not visible
+
+		debug_AIO[0]="R C4 01 006E 0A 0 002D 0000030A";
+		debug_AIO[1]="R C3 0000 80A9FF06480040000000A903000004BF000A0B0AFF04FF80FF10FF40FF80FF11";
+		debug_AIO[2]="R C3 0020 FF00FF00FF00FF01FF08FF02FF8401BFDE28FA00FF20F70048D300FF00F100F7";
+		debug_AIO[3]="R C3 0040 8893110DDA484E12DDC192972DDA885213DDC292D73DDA785614DDC292973DDA";
+		debug_AIO[4]="R C3 0060 985614DDC292D74DDA885A15DDC292974DDA985A15DDC30048D300FF00F100F7";
+		debug_AIO[5]="R C3 0080 0092D75DDA985E15DDC393176DDAA85E16DDC493975DDA985E16DDC492975DDA";
+		debug_AIO[6]="R C3 00A0 886217DDC493175DDA986217DDC493575DDA986217DDC40048D300FF00F100F7";
+		debug_AIO[7]="R C3 00C0 0093175DDAB86217DDC492575DDA986217DDC493175DDA886217DDC493175DDA";
+		debug_AIO[8]="R C3 00E0 886217DDC493175DDA986217DDC493175DDA986217DDC40048D300FF00F100F7";
+
+		debug_AIO[0]="R C4 01 006E 0A 0 002D 0000030A";
+		debug_AIO[1]="R C3 0000 80A9FF06480040000000A903000004BF000A0B0AFF04FF80FF10FF40FF80FF11";
+		debug_AIO[2]="R C3 0020 FF00FF00FF00FF01FF08FF02FF8401BFDE28FA00FF20F70048D300FF00F100F7";
+		debug_AIO[3]="R C3 0040 009927097806739D8704049D2809B806731D66FC04A0A8E9F00671DD16E804A3";
+		debug_AIO[4]="R C3 0060 A9AA2006701CA6CC04A52A0A38066DDC16A804A56A1A3C066ADB567804000000";
+		debug_AIO[5]="R C3 0080 00A469DA2C0667DA964804A2294A080664D9D618049EA869D00661D915E8039A";
+		debug_AIO[6]="R C3 00A0 E77994065F1865BC0396A66950065CD7D5980392A56910055B57758003000000";
+		debug_AIO[7]="R C3 00C0 008FA4A8E0055A974574038D6418BC055A974574038CA3E8B0055B577580038D";
+		debug_AIO[8]="R C3 00E0 2408B8055C97C594038EE478D4055ED855B80391E53904056158F5E003000000";
+
+		/*		for (int i1=0; i1<15; i1++) {
+			bits_chan_sum[i1]=0;
+			bits_chan_max[i1]=0;
+			bits_chan_min[i1]=0;
+			bits_chan_sd[i1]=0;
+			for (int i2=0; i2<32768; i2++) {
+				chan_sum[i2][i1]=0;
+				chan_max[i2][i1]=0;
+				chan_min[i2][i1]=0;
+				chan_sd[i2][i1]=0;
+			}
+		}
+		 */
+
+		Log.e(TAG, Environment.getExternalStorageDirectory().getPath()+"/datalogger");
+		new File(Environment.getExternalStorageDirectory().getPath()+"/datalogger").mkdirs();
+		ff = new File(Environment.getExternalStorageDirectory().getPath()+"/datalogger/debug.txt");
+		try {
+			fw = new FileWriter(ff);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		DebugFile = new PrintWriter(fw, true);
+		//		try {
+		//			DebugFile = new PrintWriter(Environment.getExternalStorageDirectory().getPath()+"/datalogger/debug.txt", "UTF-8");
+		//		} catch (FileNotFoundException e1) {
+		//			// TODO Auto-generated catch block
+		//			e1.printStackTrace();
+		//		} catch (UnsupportedEncodingException e1) {
+		//			// TODO Auto-generated catch block
+		//			e1.printStackTrace();
+		//		}
+
+		hndMessage = new Handler() {							// Initialiseer de handler om de messages tussen objecten te versturen
+		//final Handler hndMessage = new Handler() {							// Initialiseer de handler om de messages tussen objecten te versturen
+			public void handleMessage(android.os.Message msgMessage) { // Android roept dit aan als er een message is. msgMessage is object dat is ontvangen
+				String sTekstMessage, txt;
+				int timetonext;
+				DebugFile.println("Test");
+				sTekstMessage=(String) msgMessage.obj;		// Zet de tekst om naar de string sTekstMessage
+				switch (msgMessage.what) {
+				case RECIEVE_MESSAGE_BTSTATUS:					// message is een Bluetooth status update
+					tvBTStatus.setText(sTekstMessage);			// Zet de tekst in de tvBTStatus TextView
+					break;
+				case RECIEVE_MESSAGE_UPDATE_GRAPH:					// message is een Bluetooth status update
+					convert_buffer_to_values();
+					make_graph();
+					if (cbSave.isChecked()) {save_values();}
+
+					//if (msgMessage.arg2==1) {maak_grafiek(c4_block, c4_pos, c4_bit);}
+					//if (msgMessage.arg2==2) {tvLogStatus.setText("---");}
+					//voegToeAanGrafiek(21);
+					break;
+				case RECIEVE_MESSAGE_UPDATE_GUI:					// message is een Bluetooth status update
+					refresh_visibility();
+					break;
+				case RECIEVE_MESSAGE_TEST:					// message is een Bluetooth status update
+					//etArrPP2Value[0].setText("12");
+					//spArrFunction[0].setSelection(3) ;
+					break;
+				case RECIEVE_MESSAGE_DEBUG:					// message is een Bluetooth status update
+					tvDebug.setText(sTekstMessage);
+					//spArrFunction[0].setSelection(3) ;
+					break;
+				case RECIEVE_MESSAGE_BTDATA:					// message is data van de Bluetooth module
+					sTekstMessage=sTekstMessage.replace("\r","").replace("\n",""); // verwijder de einde lijn tekens
+					Log.e(TAG," Recv: " +sTekstMessage);
+					if (sTekstMessage.length()>3) {				// Een goede response van de module bevat minstens 3 tekens 
+						//Log.e(TAG, "Read: " + sTekstMessage);
+						if (sTekstMessage.substring(0, 4).equals("R C3")) { // datalog status
+							//if (DebugFile!=null) 
+							DebugFile.println(sTekstMessage);
+							c3_address=Integer.parseInt(sTekstMessage.substring(5, 9), 16);
+							c3_address=(c3_address & 32767);
+							for(int c3_count = 0; c3_count < 32; c3_count++) {
+								i2cBuffer[c3_address+c3_count]=Integer.parseInt(sTekstMessage.substring(10+c3_count*2, 12+c3_count*2), 16);
+								//Log.e(TAG, "i2cBuffer= " + (c3_address+c3_count) + " " + i2cBuffer[c3_address+c3_count]+ " " + sTekstMessage.substring(10+c3_count*2, 12+c3_count*2));
+							}
+							bC3_read=true;
+							if ((c3_address & 32767) == 0) iC3_ever_read=iC3_ever_read | 1; 
+							if ((c3_address & 32767) == 32) iC3_ever_read=iC3_ever_read | 2; 
+						} // C3 
+						if (sTekstMessage.substring(0, 4).equals("R C4")) {
+							if (sTekstMessage.length()>=30) { // datalog status
+								//if (DebugFile!=null) 
+								DebugFile.println("C4");
+								DebugFile.println(sTekstMessage);
+								// 1 2  5  8   13 1618   23       31
+								//"R C4 01 006E 0A 0 002D 0000030A";
+								c4_status=Integer.parseInt(sTekstMessage.substring(5, 7), 16);
+								c4_block=Integer.parseInt(sTekstMessage.substring(8, 12), 16);
+								c4_posbyte=Integer.parseInt(sTekstMessage.substring(13, 15), 16);
+								c4_posbit=Integer.parseInt(sTekstMessage.substring(16, 17), 16);
+								c4_mcount=Integer.parseInt(sTekstMessage.substring(18, 22), 16);
+								c4_mscount=Integer.parseInt(sTekstMessage.substring(23, 31), 16);
+								bC4_read=true;
+								if ((c4_status & 1) == 1) {txt="Logging on";} else {txt="Logging off";}
+								if (iC3_ever_read==3) {	// First 64 byte of buffer read?
+									int bpm=i2cBuffer[5]*256+i2cBuffer[4];
+									//int mcountmax=((i2cBuffer[9]*256+i2cBuffer[8])*256+i2cBuffer[7])*256+i2cBuffer[6];
+									int mscountmax=((i2cBuffer[13]*256+i2cBuffer[12])*256+i2cBuffer[11])*256+i2cBuffer[10];
+									//int timeperwrite=(int)(((long)mcountmax*(long)mscountmax) & 0xFFFFFFFF);
+									int nofm=0;
+									if (c4_block>1) nofm=(c4_block-1)*(int)(504/bpm);
+									nofm+=(c4_posbyte*8+c4_posbit-8)/bpm;
+									try {
+										timetonext=(int)(((long)c4_mcount*(long)mscountmax+(long)c4_mscount)/1000);
+									} catch (ArithmeticException e1) {
+										timetonext=0;
+									}
+									float memused=100f*(float)(c4_block*512+c4_posbyte*8+c4_posbit)/262144f;
+									txt+="\n# of measurements: "+Integer.toString(nofm);
+									if ((c4_status & 1) == 1) {txt+="\nSeconds to next write: "+Integer.toString(timetonext); }
+									txt+="\nI2C memory used: "+String.format("%.2f",memused)+"%";
+								} else {
+									float memused=100f*(float)(c4_block*512+c4_posbyte*8+c4_posbit)/262144f;
+									txt+="\nI2C memory used: "+String.format("%.2f",memused)+"%";
+									if ((c4_status & 1) == 1) {
+										txt+="\nMeas. to next save: "+Integer.toString(c4_mcount);
+										txt+="\nms to next meas.: "+Integer.toString(c4_mscount);
+									}
+									txt+="\nDownload header to get more info";
+								}
+							} else { // C4 not in logging mode, respones is probably "R C4 1"
+								//if (DebugFile!=null) 
+								DebugFile.println("C4");
+								DebugFile.println(sTekstMessage);
+								// 1 2  5  8   13 1618   23       31
+								//"R C4 01 006E 0A 0 002D 0000030A";
+								c4_status=0;
+								c4_block=-1;
+								c4_posbyte=-1;
+								c4_posbit=-1;
+								c4_mcount=-1;
+								c4_mscount=-1;
+								bC4_read=true;
+								txt="Logging off";
+							}
+							tvLogStatus.setText(txt);
+							Log.e(TAG, "C4_bl " + c4_block);
+							Log.e(TAG, "C4_ps " + c4_posbyte);
+							Log.e(TAG, "C4_bt " + c4_posbit);
+						} // C4
+						if (sTekstMessage.substring(0, 4).equals("G S0")) { // datalog status
+							if (Integer.parseInt(sTekstMessage.substring(5, 6),10)==1) {
+								//tvLogStatus.setText("On");
+							} else {
+								//tvLogStatus.setText("Off");
+							}
+						} // S0
+						//						if (sTekstMessage.substring(0, 3).equals("r 2")) { // als response touch waarde (2) is
+						//							if (Double.parseDouble(sTekstMessage.substring(4))<45) { //<45 is aan, >45 is uit
+						//								tvTouch.setText("Touch: Aan");	// schrijf tekst naar tvTouch TextView
+						//							} else {
+						//								tvTouch.setText("Touch: Uit");	// schrijf tekst naar tvTouch TextView
+						//							}
+						//						} 
+						//						if (sTekstMessage.substring(0, 3).equals("r 3")) { // als response temperatuur (3) is
+						//							tvTemperatuur.setText("Temperatuur: "+sTekstMessage.substring(4)+" C"); // zet temepreatuur in TextView tvTemperatuur
+						//							if (runGraph) voegToeAanGrafiek(Double.parseDouble(sTekstMessage.substring(4))); // als grafiek gevuld moet worden, stuur waarde naar voegToeAanGrafiek 
+						//						}
+						//						if (sTekstMessage.substring(0, 3).equals("r 7")) { // als response touch waarde (7) is
+						//							if (prefs.getBoolean("touch",false)==true) {  // als usersetting geeft aan dat touch aan is
+						//								if (sTekstMessage.substring(4, 5).equals("1")) { // als response geeft aan dat touch is ingedrukt
+						//									MyBluetooth.zet_LED1_Aan();		// zet LED 1 aan
+						//								} else {
+						//									MyBluetooth.zet_LED1_Uit();		// zet LED 1 aan
+						//								}
+						//							}  // if pref
+						//						} // equals 7
+					}
+					if (prefs.getBoolean("debug",false)==true) {	// als in usersettings debugmode aanstaat
+						if(sTekstMessage.length()>22) {
+							tvDebug.setText("D: "+sTekstMessage.substring(0, 22));// zet dan response van de module naar de status TextView
+						} else {
+							tvDebug.setText("D: "+sTekstMessage);// zet dan response van de module naar de status TextView
+						}
+					}
+					break;
+				} // switch
+			}; // handleMessage
+		}; // hndMessage
+
+		if (iIOBoardConnectionMode==0) {
+			IOBoard.Initiate(0, hndMessage, BTAddress, iIOBoardConnectionMode,this);	// Initieer de Bluetooth connectie
+		} else  { // WiFi and USB (which will ignore IPAddress and IPPort 
+			Log.e(TAG,"Going to initiate");
+			IOBoard.Initiate(0, hndMessage, IPAddress, IPPort, iIOBoardConnectionMode, this);	// Initieer de Bluetooth connectie
+		}
+
+		btBTConnect.setOnClickListener(new OnClickListener() { // Android roept dit aan als de button idConnect wordt ingedrukt
+			public void onClick(View v) {
+					IOBoard.connect();
+			}
+		}); // btBTConnect.setOnClickListener
+
+		btLogStart.setOnClickListener(new OnClickListener() { // Android roept dit aan als de button idLED1uit wordt ingedrukt
+			public void onClick(View v) {
+				writePinFunctions();
+				write_wait("S S3 1"+(char)10, 10);
+			}
+		}); //btLogOn.setOnClickListener
+
+		btLogRestart.setOnClickListener(new OnClickListener() { // Android roept dit aan als de button idLED1uit wordt ingedrukt
+			public void onClick(View v) {
+				write_wait("S S3 2"+(char)10, 10);
+			}
+		}); //btLogOn.setOnClickListener
+
+		btLogStop.setOnClickListener(new OnClickListener() { // Android roept dit aan als de button idLED1uit wordt ingedrukt
+			public void onClick(View v) {
+				write_wait("S S3 0"+(char)10, 10);
+			}
+		}); //btLogOff.setOnClickListener
+
+		btDownload.setOnClickListener(new OnClickListener() { // Android roept dit aan als de button idLED1aan wordt ingedrukt
+			public void onClick(View v) {
+				//MyBluetooth.zet_LED1_Aan();
+				//DebugFile.println("Graph");
+				//if (MyBluetooth.Connected()) {graph_refresh=true;}
+				//convert_buffer_to_values();
+				//make_graph();
+				iC4_readblock=0;
+				iC3_download_half=0;
+				iC4_readblockmax=c4_block;
+				iC4_readblock_old=iC4_readblockmax;
+				downloadcount=0;
+				downloadmax=(iC4_readblockmax+1)*2;
+				iC4_loopcnt=0;
+				bC3_download=true;
+				bC3_graph=true;
+			}
+		}); // btDownload.setOnClickListener
+
+		btUpdate.setOnClickListener(new OnClickListener() { // Android roept dit aan als de button idLED1uit wordt ingedrukt
+			public void onClick(View v) {
+				make_AndroidPlot();
+//				iC4_readblock=iC4_readblock_old;
+//				iC3_download_half=0;
+//				iC4_readblockmax=c4_block;
+//				iC4_readblock_old=iC4_readblockmax;
+//				iC4_loopcnt=0;
+//				if (iC4_readblockmax<iC4_readblock) {iC4_loopcnt=1;}
+//				downloadcount=0;
+//				downloadmax=(iC4_readblockmax+511*iC4_loopcnt-iC4_readblock+1)*2;
+//				bC3_download=true;
+//				bC3_graph=true;
+			}
+		}); //btUpdate.setOnClickListener
+
+		cbShowPins.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
+				showPinFunctions(isChecked);
+			}
+		}
+				);     // cbShowPins.setOnCheckedChangeListener
+
+		if (prefs.getBoolean("awake",false)==true) {	// Lees (eenmalig) de usersettings uit en zet afhankelijk daarvan de grafische elementen
+			tvBTStatus.setKeepScreenOn(true); 
+		} else {
+			tvBTStatus.setKeepScreenOn(false); 
+		}
+		if (prefs.getBoolean("visible",false)==true) {
+			imGraph.setVisibility(View.VISIBLE);
+		} else {
+			imGraph.setVisibility(View.GONE);
+		}
+
+		spListener = new SharedPreferences.OnSharedPreferenceChangeListener() {  // definieer de interface vanspListener
+			public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {  // Android roept dit aan als de usersettings wijzigen
+				if (key.equals("awake")) {
+					if (prefs.getBoolean(key,false)==true) {
+						tvBTStatus.setKeepScreenOn(true); 
+					} else {
+						tvBTStatus.setKeepScreenOn(false); 
+					}
+				}
+				if (key.equals("visible")) {
+					if (prefs.getBoolean(key,false)==true) {
+						imGraph.setVisibility(View.VISIBLE);
+					} else {
+						imGraph.setVisibility(View.GONE);
+					}
+				}
+			} // onSharedPreferenceChanged
+		}; // spListener
+
+		prefs.registerOnSharedPreferenceChangeListener(spListener); // android roept bovenstaande spListener aan als usersettings wijzigen
+
+		new Thread(new Runnable() {  // Maak een thread
+			public void run(){		 // en definieer de interface
+				int loopcnt=0;
+				int debug_cnt=0;
+				int bufpos;
+				while (bThreadRun) {
+					// Write commands?
+					bufpos=peek_pos_writebuffer();
+					if (bufpos>-1) {
+						if (writebufferdelay[bufpos]>10) {
+							writebufferdelay[bufpos]=writebufferdelay[bufpos]-10;
+						} else {
+							bufpos=pop_pos_writebuffer();
+							Log.e(TAG,"buffer: "+writebuffercomm[bufpos]);
+							My_send_command(writebuffercomm[bufpos]);
+						}
+					}
+					if (loopcnt%100==0) {	// every second C4 read
+						bC4_read=false;
+						My_send_command("r c4"+(char)13);
+						//hndMessage.obtainMessage(RECIEVE_MESSAGE_UPDATE_GUI, 0, 0, " ").sendToTarget(); // Data ready, make graph and save (if needed)
+
+					}
+					if (bC3_download) {
+						if (loopcnt%25==0) {	// Do read C3 at 250ms
+							bC3_read=false;
+							if (iC4_readblock==iC4_readblockmax) {
+								Log.e(TAG,"C3read: "+"r c3 "+String.valueOf(32768+iC3_download_half*32));
+								My_send_command("r c3 "+String.valueOf(32768+iC3_download_half*32)+(char)10);
+								downloadcount++;
+								hndMessage.obtainMessage(RECIEVE_MESSAGE_DEBUG, 0, 0, String.format("Download %d of %d", downloadcount, downloadmax)).sendToTarget(); 
+							} else {
+								Log.e(TAG,"C3read: "+"r c3 "+String.valueOf(iC4_readblock*64+iC3_download_half*32));
+								My_send_command("r c3 "+String.valueOf(iC4_readblock*64+iC3_download_half*32)+(char)10);
+								downloadcount++;
+								hndMessage.obtainMessage(RECIEVE_MESSAGE_DEBUG, 0, 0, String.format("Download %d of %d", downloadcount, downloadmax)).sendToTarget(); 
+							}
+							iC3_download_half++;
+							if (iC3_download_half>1) {
+								if (iC4_readblock==iC4_readblockmax) {
+									bC3_download=false;
+								}
+								iC3_download_half=0;
+								iC4_readblock++;
+								if (iC4_readblock>511) {
+									if (iC4_loopcnt==0) {
+										bC3_download=false;
+									} else {
+										iC4_loopcnt--;
+										iC4_readblock=1;
+									}
+								}
+							}
+						}
+					}
+					if ((!bC3_download) && (bC3_read) && (bC3_graph)) {
+						hndMessage.obtainMessage(RECIEVE_MESSAGE_DEBUG, 0, 0, " ").sendToTarget();
+						hndMessage.obtainMessage(RECIEVE_MESSAGE_UPDATE_GRAPH, 0, 0, " ").sendToTarget(); // Data ready, make graph and save (if needed)
+						bC3_graph=false;
+					}
+					// Loop completed, wait a little
+					//if ((debug_cnt<=8) && (!bC3_read)) {hndMessage.obtainMessage(RECIEVE_MESSAGE_BTDATA, -1, 1, debug_AIO[debug_cnt]).sendToTarget(); debug_cnt++; c4_block=4; c4_posbyte=1; c4_posbit=0;}
+					//if (loopcnt==1000)  {hndMessage.obtainMessage(RECIEVE_MESSAGE_TEST, 0, 0, " ").sendToTarget(); }
+					try {Thread.sleep(10);} catch (InterruptedException e) {}// Sleep 10 ms
+					loopcnt++;
+				} // while
+			}
+		}).start(); // Thread
+
+	}  // onCreate
+
+	@Override
+	public void onResume() {	// Tweede fase in de life cycle
+		super.onResume();
+			IOBoard.connect();
+	} // onResume
+
+	@Override
+	public void onPause() {		// Eerste stap in beeindigen van de life cycle
+		super.onPause();
+			IOBoard.disconnect();
+		//if (DebugFile!=null) 
+		DebugFile.close();		
+	} // onPause
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {		// Genereer de code voor het menu
+		getMenuInflater().inflate(R.menu.main, menu);	// gebaseerd op de xml file src/menu/menu.xml
+		return true;
+	} // onCreateOptionsMenu
+
+	private static final String TAG = "Datalogger";
+
+	public boolean onOptionsItemSelected(MenuItem item) {	// Android roept dit aan als op een menuoptie wordt geklikt
+		switch (item.getItemId()) {
+		case R.id.action_settings:	// start de user setting fragment
+			Intent i = new Intent(MainActivity.this, UserSettingActivity.class); // Vergeet niet in AndroidManifest toe te staan!
+			startActivity(i);
+			return true;
+		case R.id.exit:
+			bThreadRun=false;	// Stops running thread(s)
+			finish();		// exit the app; Normally not needed, but sometimes solves connection problems
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		} 
+	} // onOptionsItemSelected
+
+	private int byte2bit(int idx, int bitnr) {
+		return ((i2cBuffer[idx] & (1<<(7-bitnr)))==0) ? 0 : 1;
+	}
+
+	void My_send_command(String cmm) {
+		Log.e(TAG," Send: " +cmm);
+			IOBoard.send_command(cmm);
+	}
+
+	private int byte2data(int block, int bit_start, int bit_length) {
+		int result=0;
+		for(int bit_cnt=bit_start; bit_cnt<bit_start+bit_length; bit_cnt++) {
+			result=result*2+byte2bit(block*64+(int)(bit_cnt/8),bit_cnt % 8);
+		}
+		return result;
+	}
+
+	public void convert_buffer_to_values() {
+		int chan_counter, chan_idx_counter, pos_block, pos_bit, pos_block_start, pos_block_end;
+
+		DebugFile.println("Start convert_to_values");
+		DebugFile.flush();
+		// First analyse the header for channels and extra data
+		bits_per_measurement=(int)i2cBuffer[5]*256+(int)i2cBuffer[4];
+		DebugFile.println("BPM: "+bits_per_measurement);
+		DebugFile.flush();
+
+		chan_chn_max=0;
+		for (chan_counter=0; chan_counter<15; chan_counter++) {
+			DebugFile.println("001: "+chan_counter);
+			DebugFile.flush();
+			bits_chan_sum[chan_counter]=0;
+			bits_chan_max[chan_counter]=0;
+			bits_chan_min[chan_counter]=0;
+			bits_chan_sd[chan_counter]=0;
+			if (i2cBuffer[chan_counter*2+16]!=255) {
+				if ((i2cBuffer[2]&3)==1) { // 01: sum
+					bits_chan_sum[chan_chn_max]=(int)i2cBuffer[chan_counter*2+17]+(int)i2cBuffer[3];
+				}
+				if ((i2cBuffer[2]&3)==2) { // 10: avarage
+					bits_chan_sum[chan_chn_max]=i2cBuffer[chan_counter*2+17];
+				}
+				if ((i2cBuffer[2]&3)==3) { // 11: sum (1 bit) or avarage (>1bit)
+					if (i2cBuffer[chan_counter*2+17]<2) {
+						bits_chan_sum[chan_chn_max]=(int)i2cBuffer[chan_counter*2+17]+(int)i2cBuffer[3];
+					} else {
+						bits_chan_sum[chan_chn_max]=i2cBuffer[chan_counter*2+17];
+					}
+				}
+				if ((i2cBuffer[2]&4)==4) { // max
+					bits_chan_max[chan_chn_max]=i2cBuffer[chan_counter*2+17];
+				}
+				if ((i2cBuffer[2]&8)==8) { // min
+					bits_chan_min[chan_chn_max]=i2cBuffer[chan_counter*2+17];
+				}
+				if ((i2cBuffer[2]&16)==16) { // sd
+					bits_chan_sd[chan_chn_max]=i2cBuffer[chan_counter*2+17];
+				}
+				chan_chn_max++;
+			} 
+		} // for i1
+		DebugFile.println("chan_chn_max: "+chan_chn_max);
+		DebugFile.flush();
+
+		// find start and end block, also looking at looped data
+		pos_block_start=1;
+		pos_block_end=c4_block;
+		if ((i2cBuffer[0]&32)!=0) {  // Loop indicator set
+			for (pos_block=c4_block+1; pos_block<512; pos_block++) {
+				if ( ((i2cBuffer[pos_block*64] & 128)/128) != ((i2cBuffer[pos_block*64-64] & 64)/64) ) {
+					pos_block_start=pos_block;
+				}
+			}
+			for (pos_block=1; pos_block<c4_block; pos_block++) {
+				if ( ((i2cBuffer[pos_block*64] & 128)/128) != ((i2cBuffer[pos_block*64-64] & 64)/64) ) {
+					pos_block_start=pos_block;
+				}
+			}
+		}
+
+		pos_block_end++;
+		if (pos_block_end>511) pos_block_end=1;
+		Log.e(TAG,"pos_block_start: "+pos_block_start);
+		Log.e(TAG,"pos_block_end: "+pos_block_end);
+
+		// Now get data from the blocks
+		chan_idx_max=0;
+
+		//		if (false) {
+		pos_block=pos_block_start; 
+		while (pos_block!=pos_block_end) {
+			DebugFile.println("pos_block: "+pos_block);
+			DebugFile.flush();
+			pos_bit=8; // start
+			while ( ((pos_block!=c4_block) && (pos_bit+bits_per_measurement<512)) || ((pos_block==c4_block) && (pos_bit+bits_per_measurement<c4_posbyte*8+c4_posbit)) ) {
+				DebugFile.println("pos_bit: "+pos_bit);
+				DebugFile.flush();
+				for (chan_counter=0; chan_counter<chan_chn_max; chan_counter++) {
+					DebugFile.println("chan_counter2: "+chan_counter);
+					DebugFile.flush();
+					chan_sum[chan_idx_max][chan_counter]=byte2data(pos_block,pos_bit,bits_chan_sum[chan_counter]);
+					pos_bit+=bits_chan_sum[chan_counter];
+					chan_max[chan_idx_max][chan_counter]=byte2data(pos_block,pos_bit,bits_chan_max[chan_counter]);
+					pos_bit+=bits_chan_max[chan_counter];
+					chan_min[chan_idx_max][chan_counter]=byte2data(pos_block,pos_bit,bits_chan_min[chan_counter]);
+					pos_bit+=bits_chan_min[chan_counter];
+					chan_sd[chan_idx_max][chan_counter]=byte2data(pos_block,pos_bit,bits_chan_sd[chan_counter]);
+					pos_bit+=bits_chan_sd[chan_counter];
+				}
+				chan_idx_max++;
+			}
+			pos_block++;
+			if (pos_block>511) {pos_block=1;}
+		}
+		DebugFile.println("Double");
+		DebugFile.flush();
+		// Create for graph doubles in range 0..1
+		for (chan_counter=0; chan_counter<chan_chn_max; chan_counter++) {
+			bchan_exist[0][chan_counter]=false;
+			bchan_exist[1][chan_counter]=false;
+			bchan_exist[2][chan_counter]=false;
+			bchan_exist[3][chan_counter]=false;
+			if (bits_chan_sum[chan_counter]>0) {
+				bchan_exist[0][chan_counter]=true;
+			}
+			if (bits_chan_max[chan_counter]>0) {
+				bchan_exist[1][chan_counter]=true;
+			}
+			if (bits_chan_min[chan_counter]>0) {
+				bchan_exist[2][chan_counter]=true;
+			}
+			if (bits_chan_sd[chan_counter]>0) {
+				bchan_exist[3][chan_counter]=true;
+			}
+		}
+
+		//		}
+
+		DebugFile.println("End convert()");
+		DebugFile.flush();
+	}
+
+	void save_values() {
+		int point_cnt, line_cnt, chan_cnt;
+		int file_cnt=0;
+		String txt;
+		String csv=";";
+
+		csv=Character.toString((char)(Integer.valueOf(prefs.getString("csv", "59")) & 255));
+
+		SimpleDateFormat df = new SimpleDateFormat("yyyyddMMHHmmss");
+		Date today = Calendar.getInstance().getTime();        
+		String reportDate = df.format(today);
+
+		// First data file, later info file
+
+		String fname1=Environment.getExternalStorageDirectory().getPath()+"/datalogger/data"+reportDate+".csv";
+		Log.e(TAG, fname1);
+		try {
+			dataFile = new PrintWriter(fname1, "UTF-8");
+		} catch (FileNotFoundException e) {
+			//TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			//TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (dataFile!=null) {
+			Log.e(TAG, "file created");
+		} else {
+			Log.e(TAG, "file not created");
+		}
+
+		// First Header line
+		txt="Index";
+		for(line_cnt=0; line_cnt<chan_chn_max; line_cnt++) {
+			if (bchan_exist[0][line_cnt]) {
+				txt+=csv+pin_to_name(i2cBuffer[line_cnt*2+16])+" value";
+			}
+			if (bchan_exist[1][line_cnt]) {
+				txt+=csv+pin_to_name(i2cBuffer[line_cnt*2+16])+" Max";
+			}
+			if (bchan_exist[2][line_cnt]) {
+				txt+=csv+pin_to_name(i2cBuffer[line_cnt*2+16])+" Min";
+			}
+			if (bchan_exist[3][line_cnt]) {
+				txt+=csv+pin_to_name(i2cBuffer[line_cnt*2+16])+" SD";
+			}
+		}
+		if (dataFile!=null) dataFile.println(txt);
+
+		// Actual data
+		for (point_cnt=0;  point_cnt<chan_idx_max-1; point_cnt++) {	
+			txt=Integer.toString(point_cnt);
+			for(line_cnt=0; line_cnt<chan_chn_max; line_cnt++) {
+				if (bchan_exist[0][line_cnt]) {
+					txt+=csv+Integer.toString(chan_sum[point_cnt][line_cnt]);
+				}
+				if (bchan_exist[1][line_cnt]) {
+					txt+=csv+Integer.toString(chan_max[point_cnt][line_cnt]);
+				}
+				if (bchan_exist[2][line_cnt]) {
+					txt+=csv+Integer.toString(chan_min[point_cnt][line_cnt]);
+				}
+				if (bchan_exist[3][line_cnt]) {
+					txt+=csv+Integer.toString(chan_sd[point_cnt][line_cnt]);
+				}
+			}
+			if (dataFile!=null) dataFile.println(txt);
+		}
+		if (dataFile!=null) {dataFile.close(); file_cnt++;}
+
+		// Now info
+
+		String fname2=Environment.getExternalStorageDirectory().getPath()+"/datalogger/info"+reportDate+".txt";
+		try {
+			dataFile = new PrintWriter(fname2, "UTF-8");
+		} catch (FileNotFoundException e) {
+			//TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			//TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		int mpw=(((int)i2cBuffer[5]*256+(int)i2cBuffer[6])+(int)i2cBuffer[7])+(int)i2cBuffer[8];
+		int mpm=(((int)i2cBuffer[9]*256+(int)i2cBuffer[10])+(int)i2cBuffer[11])+(int)i2cBuffer[12];
+		txt="S0: "+Integer.toString(i2cBuffer[1]); if (dataFile!=null) dataFile.println(txt);
+		txt="S1: "+Integer.toString(i2cBuffer[2]); if (dataFile!=null) dataFile.println(txt);
+		txt="Extra bits: "+Integer.toString(i2cBuffer[3]); if (dataFile!=null) dataFile.println(txt);
+		txt="Bits per measurement: "+Integer.toString(i2cBuffer[4]); if (dataFile!=null) dataFile.println(txt);
+		txt="Measurements per write: "+Integer.toString(mpw); if (dataFile!=null) dataFile.println(txt);
+		txt="ms per measurement: "+Integer.toString(mpm); if (dataFile!=null) dataFile.println(txt);
+
+		txt="Measured points: "+Integer.toString(chan_idx_max); if (dataFile!=null) dataFile.println(txt);
+
+		// Pins
+		for (chan_cnt=0;  chan_cnt<15; chan_cnt++) {
+			if (i2cBuffer[chan_cnt*2+16]!=255) { // Channel exists
+				txt="Channel: "+Integer.toString(chan_cnt)+", pin: "+pin_to_name(i2cBuffer[chan_cnt*2+16])+", bits: "+Integer.toString(i2cBuffer[chan_cnt*2+17]);
+				if (dataFile!=null) dataFile.println(txt);
+			}
+		}
+		if (dataFile!=null) {dataFile.close(); file_cnt++;}
+
+		if (file_cnt==2) {
+			Toast.makeText(getBaseContext(), "Files "+fname1+" "+fname2+" written.", Toast.LENGTH_LONG).show();
+		} else {
+			Toast.makeText(getBaseContext(), "File write error!", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	public void make_graph() {
+		int iXBreedte, iYHoogte, line_cnt_mod;
+		float fX1, fX2, fY1, fY2, xTmp1, yTmp1, xTmp2, yTmp2;
+		Canvas cvCanvas;	// met de code in cvCanvas wordt
+		Paint pntPaint;		// met de kleur en stijl in pntPaint
+		Bitmap bmBitMap;	// op de bmBitmap bitmap getekend.
+		int iColor;
+		int[][] iaColor = new int[4][16];
+		boolean bDrawLine;
+
+		int point_cnt, line_cnt;
+
+		DebugFile.println("Makegraph 1");
+		DebugFile.flush();
+
+		if(imGraph.getWindowVisibility()!=View.VISIBLE) return;	// voorkom tekenen op niet zichtbare view
+
+		DebugFile.println("Makegraph 2");
+		DebugFile.flush();
+
+
+		// draw in graph
+		for (int i1=0; i1<16; i1++) {
+			for (int i2=0; i2<4; i2++) {
+				iaColor[i2][i1]=Color.parseColor("#202020"); // Gray
+			}
+		}
+		iaColor[0][0]=Color.parseColor("#0000FF"); // Blue
+		iaColor[1][0]=Color.parseColor("#000080"); // Med Blue
+		iaColor[2][0]=Color.parseColor("#000080"); // Med Blue
+		iaColor[3][0]=Color.parseColor("#A0A000"); // Yellow
+		iaColor[0][1]=Color.parseColor("#FF0000"); // Red
+		iaColor[1][1]=Color.parseColor("#800000"); // Dark red
+		iaColor[2][1]=Color.parseColor("#800000"); // Dark red
+		iaColor[3][1]=Color.parseColor("#808000"); // Med Yelow
+
+		Log.e(TAG, "Paint");
+
+		iXBreedte=imGraph.getWidth();	// Verkrijg de afmeting vande ImageView imGrafiek
+		iYHoogte=imGraph.getHeight();
+		//Log.e(TAG, "XB= " + iXBreedte);
+		//Log.e(TAG, "YH= " + iYHoogte);
+		//Log.e(TAG, "Bitmap");
+		bmBitMap = Bitmap.createBitmap(iXBreedte, iYHoogte, Bitmap.Config.ARGB_8888); // maak een bitmap met dezelfde afmeting en 4 byte / px
+		//bmBitMap = Bitmap.createBitmap(iXBreedte, iYHoogte, Bitmap.Config.RGB_565); // maak een bitmap met dezelfde afmeting en 4 byte / px
+		//Log.e(TAG, "Canvas");
+		cvCanvas = new Canvas(bmBitMap); // het object cvCanvas bevat de code om op de bitmap te tekenen 
+		//Log.e(TAG, "For");
+
+		for (point_cnt=0;  point_cnt<chan_idx_max-2; point_cnt++) {	// teken de punten
+			//Log.e(TAG, "PC= " + point_cnt + " " + graph_max);
+			for(line_cnt=0; line_cnt<5*chan_chn_max; line_cnt++) {
+				bDrawLine=false;
+				line_cnt_mod=line_cnt%5;
+				xTmp1=(float)point_cnt; 
+				xTmp2=(float)(point_cnt+1); 
+				yTmp1=0;
+				yTmp2=0;
+				if (line_cnt_mod<3) {
+					if (bchan_exist[line_cnt_mod][line_cnt/5]) {
+						yTmp1=(float)dchan_val(point_cnt,line_cnt%5,line_cnt/5);
+						yTmp2=(float)dchan_val(point_cnt+1,line_cnt%5,line_cnt/5);
+						bDrawLine=true;
+					}
+				}
+				if (line_cnt_mod==3) {
+					if (bchan_exist[3][line_cnt/5]) {
+						if (bchan_exist[0][line_cnt/5]) { // if avarage exists: then SD + avarage
+							yTmp1=(float)(dchan_val(point_cnt,0,line_cnt/5)+dchan_val(point_cnt,3,line_cnt/5));
+							yTmp2=(float)(dchan_val(point_cnt+1,0,line_cnt/5)+dchan_val(point_cnt+1,3,line_cnt/5));
+						} else { // otherwise sd at height
+							yTmp1=(float)(dchan_val(point_cnt,3,line_cnt/5));
+							yTmp2=(float)(dchan_val(point_cnt+1,3,line_cnt/5));
+						}
+						bDrawLine=true;
+					}
+				}
+				if (line_cnt_mod==4) {
+					if (bchan_exist[3][line_cnt/5]) {
+						if (bchan_exist[0][line_cnt/5]) { // if avarage exists: then SD - avarage
+							yTmp1=(float)(dchan_val(point_cnt,0,line_cnt/5)-dchan_val(point_cnt,3,line_cnt/5));
+							yTmp2=(float)(dchan_val(point_cnt+1,0,line_cnt/5)-dchan_val(point_cnt+1,3,line_cnt/5));
+						} else { // otherwise sd at height
+							yTmp1=(float)(dchan_val(point_cnt,3,line_cnt/5));
+							yTmp2=(float)(dchan_val(point_cnt+1,3,line_cnt/5));
+						}
+						bDrawLine=true;
+					}
+					line_cnt_mod=3;
+				}
+
+				DebugFile.println("point_cnt: "+point_cnt+" line_cnt: "+line_cnt+" bDrawLine: "+bDrawLine+" x1 "+xTmp1+" y1 "+yTmp1+" x2 "+xTmp2+" y2 "+yTmp2);
+				DebugFile.flush();
+
+				if (bDrawLine) {
+					if (yTmp1<0) yTmp1=0;
+					if (yTmp1>1) yTmp1=1;
+					if (yTmp2<0) yTmp2=0;
+					if (yTmp2>1) yTmp2=1;
+
+					fX1=(float)(xTmp1/(float)(chan_idx_max-1))*(float)iXBreedte*(float)0.94+(float)iXBreedte*(float)0.03;
+					fY1=(float)((float)iYHoogte-(float)iYHoogte*yTmp1)*(float)0.94+(float)iYHoogte*(float)0.03;
+					fX2=(float)(xTmp2/(float)(chan_idx_max-1))*(float)iXBreedte*(float)0.94+(float)iXBreedte*(float)0.03;
+					fY2=(float)((float)iYHoogte-(float)iYHoogte*yTmp2)*(float)0.94+(float)iYHoogte*(float)0.03;
+
+					//Log.e(TAG, "XY= " + fX1 + " " + fY1);
+					pntPaint = new Paint();		// pntPaint bevat teken kleur en stijl
+					pntPaint.setColor(iaColor[line_cnt_mod][line_cnt/5]);	// zet de kleur
+					DebugFile.println("line: x1 "+fX1+" y1 "+fY1+" x2 "+fX2+" y2 "+fY2);
+					DebugFile.flush();
+					cvCanvas.drawLine(fX1,fY1, fX2,fY2, pntPaint);  // teken 1 punt met kleur in pntPaint
+				}
+			}
+		}
+		//Log.e(TAG, "setbitmap");
+		imGraph.setImageBitmap(bmBitMap);	// schrijf de bitmap naar het scherm in imGrafiek
+		//Log.e(TAG, "End");
+
+		//SimpleDateFormat df = new SimpleDateFormat("yyyyddMMHHmmss");
+		//Date today = Calendar.getInstance().getTime();        
+		//String reportDate = df.format(today);
+		//try {
+		//	graphDataFile = new PrintWriter(Environment.getExternalStorageDirectory().getPath()+"/datalogger/data"+reportDate+".txt", "UTF-8");
+		//} catch (FileNotFoundException e) {
+		// TODO Auto-generated catch block
+		//	e.printStackTrace();
+		//} catch (UnsupportedEncodingException e) {
+		// TODO Auto-generated catch block
+		//	e.printStackTrace();
+		//}
+		//for (point_cnt=0;  point_cnt<graph_max; point_cnt++) {	// teken de punten
+		//	if (graphDataFile!=null) graphDataFile.println(point_cnt+" "+i2cData[point_cnt]);
+		//}
+		//if (graphDataFile!=null) graphDataFile.close();
+	      // Create a couple arrays of y-values to plot:
+
+	}
+
+	void make_AndroidPlot() {
+        Number[] series1Numbers = {1, 8, 5, 2, 7, 4};
+        Number[] series2Numbers = {4, 6, 3, 8, 2, 10};
+ 
+        // Turn the above arrays into XYSeries':
+        XYSeries series1 = new SimpleXYSeries(
+                Arrays.asList(series1Numbers),          // SimpleXYSeries takes a List so turn our array into a List
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // Y_VALS_ONLY means use the element index as the x value
+                "Series1");                             // Set the display title of the series
+ 
+        // same as above
+        XYSeries series2 = new SimpleXYSeries(Arrays.asList(series2Numbers), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "Series2");
+ 
+        // Create a formatter to use for drawing a series using LineAndPointRenderer
+        // and configure it from xml:
+        LineAndPointFormatter series1Format = new LineAndPointFormatter();
+        series1Format.setPointLabelFormatter(new PointLabelFormatter());
+        series1Format.configure(getApplicationContext(),
+                R.xml.line_point_formatter_with_plf1);
+ 
+        // add a new series' to the xyplot:
+        plot.addSeries(series1, series1Format);
+ 
+        // same as above:
+        LineAndPointFormatter series2Format = new LineAndPointFormatter();
+        series2Format.setPointLabelFormatter(new PointLabelFormatter());
+        series2Format.configure(getApplicationContext(),
+                R.xml.line_point_formatter_with_plf2);
+        plot.addSeries(series2, series2Format);
+ 
+        // reduce the number of range labels
+        plot.setTicksPerRangeLabel(3);
+        plot.getGraphWidget().setDomainLabelOrientation(-45);
+	
+	}
+	
+	double dchan_val(int point, int line, int channel) {
+		double result=0;
+		if ((line==0) && (bits_chan_sum[channel]>0)) {
+			result=(double)chan_sum[point][channel]/(double)(1<<bits_chan_sum[channel]);
+		}
+		if ((line==1) && (bits_chan_max[channel]>0)) {
+			result=(double)chan_max[point][channel]/(double)(1<<bits_chan_max[channel]);
+		}
+		if ((line==2) && (bits_chan_min[channel]>0)) {
+			result=(double)chan_min[point][channel]/(double)(1<<bits_chan_min[channel]);
+		}
+		if ((line==3) && (bits_chan_sd[channel]>0)) {
+			result=(double)chan_sd[point][channel]/(double)(1<<bits_chan_sd[channel]);
+		}
+		return result;
+	}
+
+	void put_in_writebuffer (String s1, String s2, String s3, int d) {
+		//writebufferinpos
+	}
+
+	int peek_pos_writebuffer() {
+		// returns value for reading the writebuffer, or -1 if empty
+		int result;
+		if (writebufferinpos==writebufferoutpos) {
+			result = -1;
+		} else {
+			result = writebufferoutpos;
+		}
+		return result;
+	}
+
+	int pop_pos_writebuffer() {
+		// returns value for reading the writebuffer, or -1 if empty
+		int result;
+		if (writebufferinpos==writebufferoutpos) {
+			result = -1;
+		} else {
+			result = writebufferoutpos;
+			writebufferoutpos++;
+			if (writebufferoutpos>=writebuffermax) {writebufferoutpos=0;}
+		}
+		return result;
+	}
+
+	int push_pos_writebuffer() {
+		// returns value for writing the writebuffer, or -1 if full
+		int result,tmp;
+		tmp=writebufferinpos+1;
+		if (tmp>=writebuffermax) {tmp=0;}
+		if (tmp==writebufferoutpos) {
+			result = -1;
+		} else {
+			result = writebufferinpos;
+			writebufferinpos=tmp;
+		}
+		return result;
+	}
+
+	void write_wait_check(String command, String check, String response, int delayms) {
+		int pos=push_pos_writebuffer();
+		if (pos>-1) {
+			writebuffercomm[pos] = command;
+			writebuffercheck[pos] = check;
+			writebufferresponse[pos] = response;
+			writebufferdelay[pos] = delayms;
+		}
+	}
+
+	void write_wait(String command, int delayms) {
+		int pos=push_pos_writebuffer();
+		if (pos>-1) {
+			writebuffercomm[pos] = command;
+			writebuffercheck[pos] = "#";
+			writebufferresponse[pos] = "#";
+			writebufferdelay[pos] = delayms;
+		}
+	}
+
+	String pin_to_name(int pinnumber) {
+		return Character.toString((char)(65+pinnumber/8))+Character.toString((char)(48+pinnumber%8));
+	}
+
+	void writePinFunctions() {
+		bWriteChecked=true;
+		for (int i=0; i<22; i++) {
+			//sPP2Text[i][poscnt]="#meas."; iPP1Value[i][poscnt++]=0+128; bPP2Vis[i]=true; 	
+			int itempos=spArrFunction[i].getSelectedItemPosition();
+			if ((itempos != Spinner.INVALID_POSITION) && (itempos>0)) {
+				write_wait_check("S "+pin_to_name(i)+" "+Integer.toString(iPP0Value[i][itempos])+(char)10,
+						"G "+pin_to_name(i)+(char)10,
+						"G "+pin_to_name(i)+"0 "+Integer.toString(iPP1Value[i][itempos]), 10);
+				write_wait_check("S "+pin_to_name(i)+"1 "+Integer.toString(iPP1Value[i][itempos])+(char)10,
+						"G "+pin_to_name(i)+(char)10,
+						"G "+pin_to_name(i)+"1 "+Integer.toString(iPP0Value[i][itempos]), 10);
+				if (bPP2Vis[i]) {
+					write_wait_check("S "+pin_to_name(i)+"2 "+etArrPP2Value[i].getText().toString()+(char)10,
+							"G "+pin_to_name(i)+(char)10,
+							"G "+pin_to_name(i)+"2 "+etArrPP2Value[i].getText().toString(), 10);
+				}
+			}
+		} // for i=0..21
+		int s0=0;
+		if (cbAutoStart.isChecked()) s0+=4; 				// bit 2
+		if (cbLoop.isChecked()) s0+=2;						// bit 1
+		s0+=spMeasurements.getSelectedItemPosition()*8; 	// bits 3:4
+		s0+=spPeriod.getSelectedItemPosition()*32; 			// bits 5:7
+		write_wait("S S "+Integer.toString(s0)+(char)10,10);
+		int s1=0;
+		s1+=spSumAvg.getSelectedItemPosition(); 			// bits 0:1
+		if (cbMax.isChecked()) s1+=4;						// bit 2
+		if (cbMin.isChecked()) s1+=8;						// bit 3
+		if (cbSD.isChecked()) s1+=16;						// bit 4
+		if (cbFlashLed.isChecked()) s1+=128;				// bit 7
+		write_wait("S S1 "+Integer.toString(s1)+(char)10,10);
+		if (cbSaveEEprom.isChecked()) {write_wait("S Z3 2"+(char)10,10);}
+	}
+
+	void showPinFunctions(boolean show) {
+		if (show) {
+			for (int i=0; i<22; i++) {
+				tvArrPinName[i].setVisibility(View.VISIBLE);
+				spArrFunction[i].setVisibility(View.VISIBLE);
+				if (bPP2Vis[i]) {
+					tvArrPP2Descr[i].setVisibility(View.VISIBLE);
+					etArrPP2Value[i].setVisibility(View.VISIBLE);
+				}
+			}
+			cbSaveEEprom.setVisibility(View.VISIBLE);
+			cbAutoStart.setVisibility(View.VISIBLE);
+			cbLoop.setVisibility(View.VISIBLE);
+			spMeasurements.setVisibility(View.VISIBLE);
+			spPeriod.setVisibility(View.VISIBLE);
+			spSumAvg.setVisibility(View.VISIBLE);
+			cbMax.setVisibility(View.VISIBLE);
+			cbMin.setVisibility(View.VISIBLE);
+			cbSD.setVisibility(View.VISIBLE);
+			cbFlashLed.setVisibility(View.VISIBLE);
+			tvMeasurements.setVisibility(View.VISIBLE);
+			tvPeriod.setVisibility(View.VISIBLE);
+			tvSumAvg.setVisibility(View.VISIBLE);
+
+		} else {
+			for (int i=0; i<22; i++) {
+				tvArrPinName[i].setVisibility(View.GONE);
+				spArrFunction[i].setVisibility(View.GONE);
+				tvArrPP2Descr[i].setVisibility(View.GONE);
+				etArrPP2Value[i].setVisibility(View.GONE);
+			}
+			cbSaveEEprom.setVisibility(View.GONE);
+			cbAutoStart.setVisibility(View.GONE);
+			cbLoop.setVisibility(View.GONE);
+			spMeasurements.setVisibility(View.GONE);
+			spPeriod.setVisibility(View.GONE);
+			spSumAvg.setVisibility(View.GONE);
+			cbMax.setVisibility(View.GONE);
+			cbMin.setVisibility(View.GONE);
+			cbSD.setVisibility(View.GONE);
+			cbFlashLed.setVisibility(View.GONE);
+			tvMeasurements.setVisibility(View.GONE);
+			tvPeriod.setVisibility(View.GONE);
+			tvSumAvg.setVisibility(View.GONE);
+		}
+	}
+
+	void refresh_visibility() {
+		for (int i=0; i<22; i++) {
+			if (bPP2Vis[i]) {
+				tvArrPP2Descr[i].setVisibility(View.VISIBLE);
+				//etArrPP2Value[i].setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+				etArrPP2Value[i].setVisibility(View.VISIBLE);
+			} else {
+				tvArrPP2Descr[i].setVisibility(View.GONE);
+				//etArrPP2Value[i].setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+				etArrPP2Value[i].setVisibility(View.GONE);
+			}
+		}
+
+	}
+
+	// AndroidPlot
+	   @Override
+	    public boolean onTouch(View arg0, MotionEvent event) {
+	        switch (event.getAction() & MotionEvent.ACTION_MASK) {
+	        case MotionEvent.ACTION_DOWN: // Start gesture
+	            firstFinger = new PointF(event.getX(), event.getY());
+	            mode = ONE_FINGER_DRAG;
+	            break;
+	        case MotionEvent.ACTION_UP: 
+	        case MotionEvent.ACTION_POINTER_UP:
+	            //When the gesture ends, a thread is created to give inertia to the scrolling and zoom 
+	            Timer t = new Timer();
+	                t.schedule(new TimerTask() {
+	                    @Override
+	                    public void run() {
+	                        while(Math.abs(lastScrolling)>1f || Math.abs(lastZooming-1)<1.01){ 
+	                        lastScrolling*=.8;
+	                        androidPlot_scroll(lastScrolling);
+	                        lastZooming+=(1-lastZooming)*.2;
+	                        androidPlot_zoom(lastZooming);
+	                        XYPlot.setDomainBoundaries(minXY.x, maxXY.x, BoundaryMode.AUTO);
+	                        try {
+	                        	XYPlot.postRedraw();
+	                        } catch (InterruptedException e) {
+	                            e.printStackTrace();
+	                        }
+	                        // the thread lives until the scrolling and zooming are imperceptible
+	                    }
+	                    }
+	                }, 0);
+	 
+	        case MotionEvent.ACTION_POINTER_DOWN: // second finger
+	            distBetweenFingers = androidPlot_spacing(event);
+	            // the distance check is done to avoid false alarms
+	            if (distBetweenFingers > 5f) {
+	                mode = TWO_FINGERS_DRAG;
+	            }
+	            break;
+	        case MotionEvent.ACTION_MOVE:
+	            if (mode == ONE_FINGER_DRAG) {
+	                PointF oldFirstFinger=firstFinger;
+	                firstFinger=new PointF(event.getX(), event.getY());
+	                lastScrolling=oldFirstFinger.x-firstFinger.x;
+	                androidPlot_scroll(lastScrolling);
+	                lastZooming=(firstFinger.y-oldFirstFinger.y)/mySimpleXYPlot.getHeight();
+	                if (lastZooming<0)
+	                    lastZooming=1/(1-lastZooming);
+	                else
+	                    lastZooming+=1;
+	                androidPlot_zoom(lastZooming);
+	                mySimpleXYPlot.setDomainBoundaries(minXY.x, maxXY.x, BoundaryMode.AUTO);
+	                mySimpleXYPlot.redraw();
+	 
+	            } else if (mode == TWO_FINGERS_DRAG) {
+	                float oldDist =distBetweenFingers; 
+	                distBetweenFingers=androidPlot_spacing(event);
+	                lastZooming=oldDist/distBetweenFingers;
+	                androidPlot_zoom(lastZooming);
+	                mySimpleXYPlot.setDomainBoundaries(minXY.x, maxXY.x, BoundaryMode.AUTO);
+	                mySimpleXYPlot.redraw();
+	            }
+	            break;
+	        }
+	        return true;
+	    }
+	 
+	    private void androidPlot_zoom(float scale) {
+	        float domainSpan = maxXY.x    - minXY.x;
+	        float domainMidPoint = maxXY.x        - domainSpan / 2.0f;
+	        float offset = domainSpan * scale / 2.0f;
+	        minXY.x=domainMidPoint- offset;
+	        maxXY.x=domainMidPoint+offset;
+	    }
+	 
+	    private void androidPlot_scroll(float pan) {
+	        float domainSpan = maxXY.x    - minXY.x;
+	        float step = domainSpan / mySimpleXYPlot.getWidth();
+	        float offset = pan * step;
+	        minXY.x+= offset;
+	        maxXY.x+= offset;
+	    }
+	 
+	    private float androidPlot_spacing(MotionEvent event) {
+	        float x = event.getX(0) - event.getX(1);
+	        float y = event.getY(0) - event.getY(1);
+	        return FloatMath.sqrt(x * x + y * y);
+	    }	
+	
+	void setSpinnerListeners(int i) {
+		// stupid, but only way...
+		// generated with script:
+		/*
+ 		#!/bin/bash
+		for i in {0..21}
+		do
+		echo "		if (i==$i) {"
+		echo "			spArrFunction[$i].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {"
+		echo "				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {"
+		echo "					// Object item = parent.getItemAtPosition(pos);"
+		echo "					// Make EditText for PP2 visible or not, depending on Item selected"
+		echo "					if (bPP2Vis[pos]) { // make PP2 visible"
+		echo "						tvArrPP2Descr[$i].setVisibility(View.VISIBLE);"
+		echo "						tvArrPP2Descr[$i].setText(sPP2Text[$i][pos]);"
+		echo "						etArrPP2Value[$i].setVisibility(View.VISIBLE);"
+		echo "					} else {"
+		echo "						tvArrPP2Descr[$i].setVisibility(View.GONE);"
+		echo "						etArrPP2Value[$i].setVisibility(View.GONE);"
+		echo "					}"
+		echo "				}"
+		echo "				public void onNothingSelected(AdapterView<?> parent) {"
+		echo "				}"
+		echo "			});"
+		echo "		}"
+		done
+		 */
+		if (i==0) {
+			spArrFunction[0].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[0].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[0].setText(sPP2Text[0][pos]);
+						etArrPP2Value[0].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[0].setVisibility(View.GONE);
+						etArrPP2Value[0].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==1) {
+			spArrFunction[1].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[1].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[1].setText(sPP2Text[1][pos]);
+						etArrPP2Value[1].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[1].setVisibility(View.GONE);
+						etArrPP2Value[1].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==2) {
+			spArrFunction[2].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[2].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[2].setText(sPP2Text[2][pos]);
+						etArrPP2Value[2].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[2].setVisibility(View.GONE);
+						etArrPP2Value[2].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==3) {
+			spArrFunction[3].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[3].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[3].setText(sPP2Text[3][pos]);
+						etArrPP2Value[3].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[3].setVisibility(View.GONE);
+						etArrPP2Value[3].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==4) {
+			spArrFunction[4].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[4].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[4].setText(sPP2Text[4][pos]);
+						etArrPP2Value[4].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[4].setVisibility(View.GONE);
+						etArrPP2Value[4].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==5) {
+			spArrFunction[5].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[5].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[5].setText(sPP2Text[5][pos]);
+						etArrPP2Value[5].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[5].setVisibility(View.GONE);
+						etArrPP2Value[5].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==6) {
+			spArrFunction[6].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[6].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[6].setText(sPP2Text[6][pos]);
+						etArrPP2Value[6].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[6].setVisibility(View.GONE);
+						etArrPP2Value[6].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==7) {
+			spArrFunction[7].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[7].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[7].setText(sPP2Text[7][pos]);
+						etArrPP2Value[7].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[7].setVisibility(View.GONE);
+						etArrPP2Value[7].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==8) {
+			spArrFunction[8].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[8].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[8].setText(sPP2Text[8][pos]);
+						etArrPP2Value[8].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[8].setVisibility(View.GONE);
+						etArrPP2Value[8].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==9) {
+			spArrFunction[9].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[9].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[9].setText(sPP2Text[9][pos]);
+						etArrPP2Value[9].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[9].setVisibility(View.GONE);
+						etArrPP2Value[9].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==10) {
+			spArrFunction[10].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[10].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[10].setText(sPP2Text[10][pos]);
+						etArrPP2Value[10].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[10].setVisibility(View.GONE);
+						etArrPP2Value[10].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==11) {
+			spArrFunction[11].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[11].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[11].setText(sPP2Text[11][pos]);
+						etArrPP2Value[11].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[11].setVisibility(View.GONE);
+						etArrPP2Value[11].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==12) {
+			spArrFunction[12].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[12].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[12].setText(sPP2Text[12][pos]);
+						etArrPP2Value[12].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[12].setVisibility(View.GONE);
+						etArrPP2Value[12].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==13) {
+			spArrFunction[13].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[13].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[13].setText(sPP2Text[13][pos]);
+						etArrPP2Value[13].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[13].setVisibility(View.GONE);
+						etArrPP2Value[13].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==14) {
+			spArrFunction[14].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[14].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[14].setText(sPP2Text[14][pos]);
+						etArrPP2Value[14].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[14].setVisibility(View.GONE);
+						etArrPP2Value[14].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==15) {
+			spArrFunction[15].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[15].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[15].setText(sPP2Text[15][pos]);
+						etArrPP2Value[15].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[15].setVisibility(View.GONE);
+						etArrPP2Value[15].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==16) {
+			spArrFunction[16].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[16].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[16].setText(sPP2Text[16][pos]);
+						etArrPP2Value[16].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[16].setVisibility(View.GONE);
+						etArrPP2Value[16].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==17) {
+			spArrFunction[17].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[17].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[17].setText(sPP2Text[17][pos]);
+						etArrPP2Value[17].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[17].setVisibility(View.GONE);
+						etArrPP2Value[17].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==18) {
+			spArrFunction[18].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[18].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[18].setText(sPP2Text[18][pos]);
+						etArrPP2Value[18].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[18].setVisibility(View.GONE);
+						etArrPP2Value[18].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==19) {
+			spArrFunction[19].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[19].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[19].setText(sPP2Text[19][pos]);
+						etArrPP2Value[19].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[19].setVisibility(View.GONE);
+						etArrPP2Value[19].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==20) {
+			spArrFunction[20].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[20].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[20].setText(sPP2Text[20][pos]);
+						etArrPP2Value[20].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[20].setVisibility(View.GONE);
+						etArrPP2Value[20].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+		if (i==21) {
+			spArrFunction[21].setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+				public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+					// Object item = parent.getItemAtPosition(pos);
+					// Make EditText for PP2 visible or not, depending on Item selected
+					if (bPP2Vis[pos]) { // make PP2 visible
+						tvArrPP2Descr[21].setVisibility(View.VISIBLE);
+						tvArrPP2Descr[21].setText(sPP2Text[21][pos]);
+						etArrPP2Value[21].setVisibility(View.VISIBLE);
+					} else {
+						tvArrPP2Descr[21].setVisibility(View.GONE);
+						etArrPP2Value[21].setVisibility(View.GONE);
+					}
+				}
+				public void onNothingSelected(AdapterView<?> parent) {
+				}
+			});
+		}
+	}
+
+
+} // MainActivity
+

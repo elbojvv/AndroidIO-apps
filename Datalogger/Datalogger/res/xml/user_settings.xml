@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+     <PreferenceCategory android:title="@string/connection_title" >
+        <ListPreference
+            android:defaultValue="1"
+            android:entries="@array/conn_mode_e"
+            android:entryValues="@array/conn_mode_v"
+            android:key="conn_mode"
+            android:title="@string/conn_mode_text" 
+            android:summary="@string/conn_mode_extra" />
+
+        <EditTextPreference
+            android:key="bt_address"
+            android:defaultValue="00:00:00:00:00:00"
+            android:title="@string/bt_address_text" 
+            android:summary="@string/bt_address_extra" />
+            
+        <EditTextPreference
+            android:key="wifi_address"
+            android:defaultValue="192.168.178.25"
+            android:title="@string/wifi_address_text" 
+            android:summary="@string/wifi_address_extra" />
+            
+        <EditTextPreference
+            android:key="wifi_port"
+            android:defaultValue="2000"
+            android:inputType="number"
+            android:title="@string/wifi_port_text" 
+            android:summary="@string/wifi_port_extra" />
+            
+        <EditTextPreference
+            android:key="usbhost_port"
+            android:defaultValue="0"
+            android:inputType="number"
+            android:title="@string/usbhost_port_text" 
+            android:summary="@string/usbhost_port_extra" />
+            
+        </PreferenceCategory>
+    
+    <PreferenceCategory android:title="@string/set_export_title" >
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="stretch"
+            android:summary="@string/set_stretch_extra"
+            android:title="@string/set_stretch" />
+
+        <ListPreference
+            android:defaultValue="1"
+            android:entries="@array/csv_key"
+            android:entryValues="@array/csv_value"
+            android:key="csv"
+            android:summary="@string/set_csv_extra"
+            android:title="@string/set_csv" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/set_misc_title" >
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="awake"
+            android:summary="@string/set_sleep_extra"
+            android:title="@string/set_sleep" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="debug"
+            android:summary="@string/set_debug_extra"
+            android:title="@string/set_debug" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring accessors="true" comment="Delete element from project &apos;EtchControl&apos;&#x0D;&#x0A;- Original project: &apos;EtchControl&apos;&#x0D;&#x0A;- Original element: &apos;com.example.EtchControl.BTfunctions_getstring.java&apos;" description="Delete element" element1="/src&lt;com.example.EtchControl{BTfunctions_getstring.java" elements="1" flags="589830" id="org.eclipse.jdt.ui.delete" resources="0" stamp="1417469041797" subPackages="false" version="1.0"/>
+</session>

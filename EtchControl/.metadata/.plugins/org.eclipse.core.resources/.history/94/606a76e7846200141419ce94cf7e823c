@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout	
+	android:id="@+id/view"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent">
+	
+     <Button
+        android:id="@+id/idBTConnect"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connect" />
+    
+  	<TextView 
+		android:id="@+id/idBTStatus"
+		android:text="x"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/idBTConnect"
+        android:layout_alignBottom="@+id/idBTConnect"
+        android:layout_marginLeft="15dp"
+        android:layout_toRightOf="@+id/idBTConnect"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+ 
+     <TextView
+        android:id="@+id/idLED1text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idBTConnect"
+        android:layout_marginTop="10dp"
+        android:text="LED geel"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <Button
+        android:id="@+id/idLED1uit"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/idLED1text"
+        android:layout_alignBottom="@+id/idLED1text"
+        android:layout_marginLeft="15dp"
+        android:layout_toRightOf="@+id/idLED1text"
+        android:text="Uit" />
+
+    <Button
+        android:id="@+id/idLED1aan"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/idLED1uit"
+        android:layout_alignBottom="@+id/idLED1uit"
+        android:layout_toRightOf="@+id/idLED1uit"
+        android:text="Aan" />
+
+
+    <TextView
+        android:id="@+id/idLED2text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/idLED1uit"
+        android:layout_marginTop="35dp"
+        android:text="LED oranje"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <SeekBar
+        android:id="@+id/idLED2dimmer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/idLED1text"
+        android:layout_below="@+id/idLED2text" />
+
+    <TextView
+        android:id="@+id/idTouchtext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idLED2dimmer"
+        android:layout_marginTop="22dp"
+        android:text="x"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/idTemperatuurtext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/idTouchtext"
+        android:layout_marginTop="22dp"
+        android:text="x"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <ImageView
+        android:id="@+id/idGrafiek"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" 
+        android:layout_below="@+id/idTemperatuurtext"
+        android:layout_marginTop="25dp"
+        android:background="#606090" />
+ 				
+</RelativeLayout>
+

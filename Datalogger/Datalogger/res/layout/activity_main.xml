@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrollview"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content" >
+
+    <RelativeLayout
+        android:id="@+id/view"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+
+        <RelativeLayout
+            android:id="@+id/view1"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true" >
+
+            <Button
+                android:id="@+id/idBTConnect"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Connect" />
+
+            <TextView
+                android:id="@+id/idBTStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/idBTConnect"
+                android:layout_alignBottom="@+id/idBTConnect"
+                android:layout_marginLeft="15dp"
+                android:layout_toRightOf="@+id/idBTConnect"
+                android:text="x"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/view2"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/view1" >
+
+            <TextView
+                android:id="@+id/idLogStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_marginTop="10dp"
+                android:text="---"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <Button
+                android:id="@+id/idLogStart"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/idLogStatus"
+                android:text="Start" />
+
+            <Button
+                android:id="@+id/idLogRestart"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/idLogStart"
+                android:layout_alignBottom="@+id/idLogStart"
+                android:layout_toRightOf="@+id/idLogStart"
+                android:text="Restart" />
+
+            <Button
+                android:id="@+id/idLogStop"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/idLogRestart"
+                android:layout_alignBottom="@+id/idLogRestart"
+                android:layout_toRightOf="@+id/idLogRestart"
+                android:text="Stop" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/view3"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/view2" >
+
+            <Button
+                android:id="@+id/idDownload"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_marginTop="10dp"
+                android:text="Download" />
+
+            <Button
+                android:id="@+id/idUpdate"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/idDownload"
+                android:layout_alignBottom="@+id/idDownload"
+                android:layout_toRightOf="@+id/idDownload"
+                android:text="Update" />
+
+            <CheckBox
+                android:id="@+id/idSave"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/idUpdate"
+                android:layout_alignBottom="@+id/idUpdate"
+                android:layout_toRightOf="@+id/idUpdate"
+                android:checked="true"
+                android:text="Save to files" />
+
+            <Button
+                android:id="@+id/idHeader"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idDownload"
+                android:text="Header" />
+
+            <Button
+                android:id="@+id/idRaw"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/idHeader"
+                android:layout_alignBottom="@+id/idHeader"
+                android:layout_toRightOf="@+id/idHeader"
+                android:text="Raw and save" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/view4"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/view3" >
+
+            <TextView
+                android:id="@+id/idSettingBut"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_marginTop="10dp"
+                android:text="Settings:"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <Button
+                android:id="@+id/idReadPins"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idSettingBut"
+                android:text="Read" />
+
+            <Button
+                android:id="@+id/idLoadPins"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/idReadPins"
+                android:layout_alignBottom="@+id/idReadPins"
+                android:layout_toRightOf="@+id/idReadPins"
+                android:text="Load" />
+
+            <Button
+                android:id="@+id/idSavePins"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/idLoadPins"
+                android:layout_alignBottom="@+id/idLoadPins"
+                android:layout_toRightOf="@+id/idLoadPins"
+                android:checked="true"
+                android:text="Save" />
+
+ 
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/view5"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/view4" >
+
+            <TextView
+                android:id="@+id/idDebugtext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_marginTop="5dp"
+                android:text=" "
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/view6"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/view5" >
+
+            <CheckBox
+                android:id="@+id/idShowPins"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                android:text="Show Settings" />
+
+            <CheckBox
+                android:id="@+id/idSaveEEprom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idShowPins"
+                android:checked="true"
+                android:text="Save settings to EEPROM" />
+
+            <CheckBox
+                android:id="@+id/idLoop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idSaveEEprom"
+                android:checked="true"
+                android:text="Loop logging" />
+
+            <CheckBox
+                android:id="@+id/idAutoStart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idLoop"
+                android:checked="true"
+                android:text="Start at startup" />
+
+            <TextView
+                android:id="@+id/idtvMeasurements"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idAutoStart"
+                android:layout_marginTop="20dp"
+                android:text="@string/measurements_prompt" />
+
+            <Spinner
+                android:id="@+id/idMeasurements"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/idtvMeasurements"
+                android:layout_alignBottom="@+id/idtvMeasurements"
+                android:layout_toRightOf="@+id/idtvMeasurements"
+                android:entries="@array/measurements_array"
+                android:prompt="@string/measurements_prompt" />
+
+            <TextView
+                android:id="@+id/idtvPeriod"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idtvMeasurements"
+                android:layout_marginTop="20dp"
+                android:text="@string/period_prompt" />
+
+            <Spinner
+                android:id="@+id/idPeriod"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/idtvPeriod"
+                android:layout_alignBottom="@+id/idtvPeriod"
+                android:layout_toRightOf="@+id/idtvPeriod"
+                android:entries="@array/period_array"
+                android:prompt="@string/period_prompt" />
+
+            <TextView
+                android:id="@+id/idtvSumAvg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idtvPeriod"
+                android:layout_marginTop="20dp"
+                android:text="@string/sumavg_prompt" />
+
+            <Spinner
+                android:id="@+id/idSumAvg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/idtvSumAvg"
+                android:layout_alignBottom="@+id/idtvSumAvg"
+                android:layout_toRightOf="@+id/idtvSumAvg"
+                android:entries="@array/sumavg_array"
+                android:prompt="@string/sumavg_prompt" />
+
+            <CheckBox
+                android:id="@+id/idMax"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idtvSumAvg"
+                android:checked="false"
+                android:text="Maximum value" />
+
+            <CheckBox
+                android:id="@+id/idMin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idMax"
+                android:checked="false"
+                android:text="Minimum value" />
+
+            <CheckBox
+                android:id="@+id/idSD"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idMin"
+                android:checked="false"
+                android:text="Standard Deviation" />
+
+            <CheckBox
+                android:id="@+id/idFlashLed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idSD"
+                android:checked="true"
+                android:text="Flash LED" />
+
+            <RelativeLayout
+                android:id="@+id/idPinSettings"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/idFlashLed"
+                android:layout_marginTop="5dp" />
+        </RelativeLayout>
+
+    <RelativeLayout
+            android:id="@+id/view7"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/view6" >
+
+            <com.androidplot.xy.XYPlot
+                android:id="@+id/mySimpleXYPlot"
+                android:layout_width="match_parent"
+                android:layout_height="400dp"
+                androidPlot.domainLabel="Domain"
+                androidPlot.domainLabelWidget.labelPaint.textSize="@dimen/domain_label_font_size"
+                androidPlot.graphWidget.domainLabelPaint.textSize="@dimen/domain_tick_label_font_size"
+                androidPlot.graphWidget.domainOriginLabelPaint.textSize="@dimen/domain_tick_label_font_size"
+                androidPlot.graphWidget.gridLinePaint.color="#000000"
+                androidPlot.graphWidget.marginBottom="25dp"
+                androidPlot.graphWidget.marginLeft="15dp"
+                androidPlot.graphWidget.marginRight="10dp"
+                androidPlot.graphWidget.marginTop="20dp"
+                androidPlot.graphWidget.rangeLabelPaint.textSize="@dimen/range_tick_label_font_size"
+                androidPlot.graphWidget.rangeOriginLabelPaint.textSize="@dimen/range_tick_label_font_size"
+                androidPlot.legendWidget.heightMetric.value="25dp"
+                androidPlot.legendWidget.iconSizeMetrics.heightMetric.value="15dp"
+                androidPlot.legendWidget.iconSizeMetrics.widthMetric.value="15dp"
+                androidPlot.legendWidget.positionMetrics.anchor="right_bottom"
+                androidPlot.legendWidget.textPaint.textSize="@dimen/legend_text_font_size"
+                androidPlot.rangeLabel="Range"
+                androidPlot.rangeLabelWidget.labelPaint.textSize="@dimen/range_label_font_size"
+                androidPlot.title=" "
+                androidPlot.titleWidget.labelPaint.textSize="@dimen/title_font_size" />
+        </RelativeLayout>
+
+    </RelativeLayout>
+
+</ScrollView>

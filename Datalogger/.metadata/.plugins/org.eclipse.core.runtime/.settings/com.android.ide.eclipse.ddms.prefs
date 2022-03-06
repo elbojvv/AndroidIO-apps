@@ -1,0 +1,13 @@
+ddms.logcat.auotmonitor.level=error
+ddms.logcat.automonitor.userprompt=true
+eclipse.preferences.version=1
+logcat.messagelist.max.size=50000
+logcat.view.auto-scroll-lock=false
+logcat.view.colsize.Application=212
+logcat.view.colsize.Level=26
+logcat.view.colsize.PID=58
+logcat.view.colsize.TID=58
+logcat.view.colsize.Tag=115
+logcat.view.colsize.Text=616
+logcat.view.colsize.Time=254
+logcat.view.display.filters=false
